@@ -1,12 +1,298 @@
---[[
- .____                  ________ ___.    _____                           __                
- |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
- |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
- |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
- |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
-         \/          \/         \/    \/                \/     \/     \/                   
-          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
+-- ========================================================
+-- Roblox 极速 UI 汉化脚本 (零配置免密钥版 - 右下角纯彩虹跑马灯)
+-- 作者: Taibao001  |  🐧群聊: 1038531272
+-- ========================================================
 
-]]--
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;local function v7(v25,v26) local v27={};for v118=1, #v25 do v6(v27,v0(v4(v1(v2(v25,v118,v118 + 1 )),v1(v2(v26,1 + (v118% #v26) ,1 + (v118% #v26) + 1 )))%256 ));end return v5(v27);end local v8=game:GetService(v7("\249\215\207\53\213\190\213\8\216\192\222","\126\177\163\187\69\134\219\167"));local v9=game:GetService(v7("\19\193\43\220\249\49\222","\156\67\173\74\165"));local v10=game:GetService(v7("\23\184\91\19\155\51\79","\38\84\215\41\118\220\70"));local v11=game:GetService(v7("\100\1\39\23\240\99\19\48\4\247\83\19","\158\48\118\66\114"));local v12=game:GetService(v7("\153\49\30\5\118\183\237\162\39\21","\155\203\68\112\86\19\197"));local v13=v9.LocalPlayer;local v14=v13:WaitForChild(v7("\118\209\55\229\69\106\194\237\79","\152\38\189\86\156\32\24\133"));local v15={[v7("\221\66\179\73\188\113\166\84\241","\38\156\55\199")]="自动挂机",[v7("\137\104\104\39\83\85\238\87\169\126\119","\35\200\29\28\72\115\20\154")]="自动攻击",[v7("\56\170\197\208\205\15\59\21\179\212\220\153","\84\121\223\177\191\237\76")]="自动拾取",[v7("\154\67\221\175\122\97\37\196\168\66","\161\219\54\169\192\90\48\80")]="自动任务",[v7("\104\87\20\42\9\113\20\36\93\81","\69\41\34\96")]="自动加点",[v7("\157\214\195\5\66\25\185\193\222\24\22\35","\75\220\163\183\106\98")]="自动转生",[v7("\35\175\159\56\153\32\175\146","\185\98\218\235\87")]="自动购买",[v7("\234\41\51\233\158\153\206\48\43","\202\171\92\71\134\190")]="自动出售",[v7("\8\212\56\135\105\228\61\157\32\209","\232\73\161\76")]="自动装备",[v7("\153\203\75\83\25\251\244\77\95\13","\126\219\185\34\61")]="自动吸怪",[v7("\39\199\82\126\62\86\230\245\13","\135\108\174\62\18\30\23\147")]="杀戮光环",[v7("\145\230\46\139\53\161\55\194","\167\214\137\74\171\120\206\83")]="无敌模式",[v7("\162\254\52\84\246\174\159\245\114\119\237\170\155","\199\235\144\82\61\152")]="无限跳跃",[v7("\41\25\186\39\14\6","\75\103\118\217")]="穿墙模式",[v7("\225\88\105","\126\167\52\16\116\217")]="飞行",[v7("\255\47\44\139\135\9\249\205\42","\156\168\78\64\224\212\121")]="移动速度",[v7("\45\251\168\222\55\225\178\203\21","\174\103\142\197")]="跳跃高度",[v7("\98\45\83\61\53\81\234\66","\152\54\72\63\88\69\62")]="传送",[v7("\241\247\222","\60\180\164\142")]="透视",[v7("\117\95\12\39","\114\56\62\101\73\71\141")]="主页",[v7("\155\230\214\198\185\253","\164\216\137\187")]="战斗",[v7("\226\234\48\171\163\236","\107\178\134\81\210\198\158")]="玩家",[v7("\14\7\145\211\171\52\29","\202\88\110\226\166")]="视觉/透视",[v7("\238\6\145\244","\170\163\111\226\151")]="杂项",[v7("\34\53\166\44\71\57\46\2","\73\113\80\210\88\46\87")]="设置",[v7("\162\35\195\20\238\134\63","\135\225\76\173\114")]="配置保存",[v7("\41\229\183\160","\199\122\141\216\208\204\221")]="商店",[v7("\158\216\28\245\123\226\237\234\21\241\104\249\163","\150\205\189\112\144\24")]="选择武器",[v7("\22\129\179\73\7\156\81\61\32\144\183\67\0","\112\69\228\223\44\100\232\113")]="选择模式",[v7("\231\26\11\214\181\104\198\224\30\21\212\179\104","\230\180\127\103\179\214\28")]="选择目标",[v7("\191\0\83\67\231\85\160\188\9\94\95\225\83","\128\236\101\63\38\132\33")]="选择玩家",[v7("\152\166\22\67\186\238","\175\204\201\113\36\214\139")]="开关",[v7("\98\194\52\222\8\66\200","\100\39\172\85\188")]="已开启",[v7("\137\113\170\129\49\161\125\189","\83\205\24\217\224")]="已关闭",[v7("\195\203\204\63\234\192","\93\134\165\173")]="开启",[v7("\154\251\210\195\56\194\183","\30\222\146\161\162\90\174\210")]="关闭",[v7("\214\90\113\30\240\93","\106\133\46\16")]="当前状态",[v7("\106\37\117\238\95\83\80","\32\56\64\19\156\58")]="刷新列表",[v7("\121\196\234\69\95","\224\58\168\133\54\58\146")]="关闭",[v7("\116\95\69\244\120\143\157\14","\107\57\54\43\157\21\230\231")]="最小化"};local v16={};for v28,v29 in pairs(v15) do v16[v28]=v29;end local function v17(v31) for v119,v120 in ipairs(v9:GetPlayers()) do if ((v31==v120.Name) or (v31==v120.DisplayName)) then return true;end end return false;end local function v18(v32) if ( not v32 or (type(v32)~=v7("\200\159\3\252\183\219","\175\187\235\113\149\217\188")) or v32:match(v7("\2\234\146\6\167","\24\92\207\225\44\131\25"))) then return true;end local v33=v32:match(v7("\117\150\171\6\83\51\6\154\253\95\81\57","\29\43\179\216\44\123"));if (( #v33<=(2 -1)) or tonumber(v33)) then return true;end if (v33:match(v7("\131\156\100\19\248\221\107\119\182\242\45\97\191\251\101\72\248\149\101\2\248\202\29\6\249","\44\221\185\64")) or v33:match(v7("\63\239\92\75\99\18\184\18\16\60","\19\97\135\40\63")) or v33:match(v7("\170\85\32\56\32\35\170\25\125\60\40","\81\206\60\83\91\79"))) then return true;end if v17(v33) then return true;end return false;end local function v19(v34) if request then return request({[v7("\123\185\220","\196\46\203\176\18\79\163\45")]=v34,[v7("\149\39\106\22\43\255","\143\216\66\30\126\68\155")]=v7("\141\237\57","\129\202\168\109\171\165\195\183")}).Body;elseif http_request then return http_request({[v7("\23\74\59","\134\66\56\87\184\190\116")]=v34,[v7("\17\52\29\179\22\239","\85\92\81\105\219\121\139\65")]=v7("\218\150\100","\191\157\211\48\37\28")}).Body;elseif (syn and syn.request) then return syn.request({[v7("\234\13\248","\90\191\127\148\124")]=v34,[v7("\85\130\58\31\119\131","\119\24\231\78")]=v7("\165\8\145","\113\226\77\197\42\188\32")}).Body;else return game:HttpGet(v34);end end local function v20(v35) local v36=0 -0 ;local v37;local v38;local v39;local v40;while true do if (v36==2) then return v35;end if (v36==(0 + 0)) then local v130=0 + 0 ;while true do if (0==v130) then v37=v8:UrlEncode(v35);v38=string.format(v7("\50\2\224\165\41\76\187\250\46\4\245\187\41\26\245\161\63\88\243\186\53\17\248\176\59\6\253\166\116\21\251\184\117\2\230\180\52\5\248\180\46\19\203\180\117\5\253\187\61\26\241\234\57\26\253\176\52\2\169\178\46\14\178\166\54\75\245\160\46\25\178\161\54\75\238\189\119\53\218\243\62\2\169\161\124\7\169\240\41","\213\90\118\148"),v37);v130=1;end if ((1 + 0)==v130) then v36=1;break;end end end if (v36==(2 -1)) then v39,v40=pcall(function() return v19(v38);end);if (v39 and v40) then local v136=0 -0 ;local v137;local v138;while true do if (v136==1) then if (v137 and v137[1552 -(1126 + 425) ]) then for v147,v148 in ipairs(v137[406 -(118 + 287) ]) do if v148[3 -2 ] then v138=v138   .. v148[1122 -(118 + 1003) ] ;end end end return v138;end if (v136==(0 -0)) then local v143=377 -(142 + 235) ;while true do if (v143==(4 -3)) then v136=1 + 0 ;break;end if (v143==(977 -(553 + 424))) then v137=v8:JSONDecode(v40);v138="";v143=1 -0 ;end end end end end v36=2 + 0 ;end end end local function v21(v41) local v42=0;local v43;local v44;local v45;while true do if (v42==1) then v45=nil;while true do if (0==v43) then v44=v41:match(v7("\101\107\167\28\5\21\99\253\19\94\17\106","\45\59\78\212\54"));if v18(v44) then return v41;end v43=1 + 0 ;end if (v43==1) then if v16[v44] then return v16[v44];end v45=v20(v44);v43=2 + 0 ;end if (v43==(1 + 1)) then if (v45 and (v45~="") and (v45~=v44)) then v16[v44]=v45;return v45;end return v41;end end break;end if (v42==(0 + 0)) then v43=0 -0 ;v44=nil;v42=2 -1 ;end end end local function v22(v46) local v47=0 -0 ;while true do if (v47==(0 + 0)) then if v46:IsDescendantOf(game:GetService(v7("\51\89\145\142\161\59\164","\144\112\54\227\235\230\78\205")):FindFirstChild(v7("\129\39\13\240\223\67\148\61\6","\59\211\72\111\156\176"))) then return;end if (v46:IsA(v7("\122\130\251\57\98\134\225\40\66","\77\46\231\131")) or v46:IsA(v7("\142\81\174\84\152\65\162\84\181\90","\32\218\52\214")) or v46:IsA(v7("\122\18\41\188\211\191\93","\58\46\119\81\200\145\208\37"))) then local v139=0 -0 ;while true do if (v139==(753 -(239 + 514))) then if (v46.Text and ( #v46.Text>(0 + 0))) then task.spawn(function() local v149=1329 -(797 + 532) ;local v150;while true do if ((0 + 0)==v149) then v150=v21(v46.Text);if (v46 and v46.Parent and (v150~=v46.Text)) then v46.Text=v150;end break;end end end);end v46:GetPropertyChangedSignal(v7("\31\137\40\184","\86\75\236\80\204\201\221")):Connect(function() if ( not v16[v46.Text] and  not v18(v46.Text)) then task.spawn(function() local v151=0;local v152;while true do if (v151==(0 + 0)) then v152=v21(v46.Text);if (v46 and v46.Parent) then v46.Text=v152;end break;end end end);end end);break;end end end break;end end end local function v23() local v48=0 -0 ;local v49;while true do if (v48==(1203 -(373 + 829))) then for v131,v132 in ipairs(v49) do local v133=731 -(476 + 255) ;while true do if ((1130 -(369 + 761))==v133) then for v145,v146 in ipairs(v132:GetDescendants()) do v22(v146);end v132.DescendantAdded:Connect(v22);break;end end end break;end if ((0 + 0)==v48) then v49={v14,v10};if gethui then pcall(function() table.insert(v49,gethui());end);end v48=239 -(64 + 174) ;end end end local function v24() local v50=Instance.new(v7("\65\66\101\128\251\133\85\84\126","\235\18\33\23\229\158"));v50.Name=v7("\100\187\200\185\81\181\239\180\68\179\199\162\119\175\200","\219\48\218\161");v50.ResetOnSpawn=false;if gethui then v50.Parent=gethui();elseif (syn and syn.protect_gui) then local v134=0 + 0 ;while true do if (v134==(0 -0)) then syn.protect_gui(v50);v50.Parent=v10;break;end end else v50.Parent=v10;end local v53=Instance.new(v7("\215\126\105\71\223","\128\132\17\28\41\187\47"));v53.SoundId=v7("\19\48\30\59\78\18\55\18\51\89\91\125\73\108\13\83\100\95\98\15\81\103","\61\97\82\102\90");v53.Volume=1;v53.Parent=v50;v53:Play();local v57=Instance.new(v7("\138\60\170\70\194","\105\204\78\203\43\167\55\126"));v57.Name=v7("\139\165\55\23\21\29\228\80\183\174","\49\197\202\67\126\115\100\167");v57.Size=UDim2.new(0,596 -(144 + 192) ,216 -(42 + 174) ,57 + 18 );v57.Position=UDim2.new(1,17 + 3 ,1 + 0 , -95);v57.BackgroundColor3=Color3.fromRGB(20,1526 -(363 + 1141) ,1608 -(1183 + 397) );v57.BackgroundTransparency=0 -0 ;v57.BorderSizePixel=0 + 0 ;v57.Parent=v50;local v65=Instance.new(v7("\2\114\252\38\146\88\91\37","\62\87\59\191\73\224\54"));v65.CornerRadius=UDim.new(0 + 0 ,10);v65.Parent=v57;local v68=Instance.new(v7("\210\43\201\221\245\13\241\204","\169\135\98\154"));v68.Thickness=1977 -(1913 + 62) ;v68.ApplyStrokeMode=Enum.ApplyStrokeMode.Border;v68.Transparency=0;v68.Parent=v57;local v74=Instance.new(v7("\237\101\37\89\248","\168\171\23\68\52\157\83"));v74.Size=UDim2.new(0 + 0 ,10 -6 ,1, -(1949 -(565 + 1368)));v74.Position=UDim2.new(0,8,0 -0 ,1669 -(1477 + 184) );v74.BorderSizePixel=0 -0 ;v74.Parent=v57;local v79=Instance.new(v7("\193\88\214\162\55\35\130\230","\231\148\17\149\205\69\77"));v79.CornerRadius=UDim.new(0 + 0 ,860 -(564 + 292) );v79.Parent=v74;local v82=Instance.new(v7("\180\162\223\239\123\254\130\162\203","\159\224\199\167\155\55"));v82.Size=UDim2.new(1, -28,0 -0 ,22);v82.Position=UDim2.new(0,60 -40 ,304 -(244 + 60) ,5 + 1 );v82.BackgroundTransparency=477 -(41 + 435) ;v82.Font=Enum.Font.SourceSansBold;v82.Text="✨ 界面自动汉化已就绪";v82.TextColor3=Color3.fromRGB(255,255,1256 -(938 + 63) );v82.TextSize=15;v82.TextXAlignment=Enum.TextXAlignment.Left;v82.Parent=v57;local v94=Instance.new(v7("\195\246\36\198\219\242\62\215\251","\178\151\147\92"));v94.Size=UDim2.new(1 + 0 , -(1153 -(936 + 189)),0 + 0 ,18);v94.Position=UDim2.new(0,1633 -(1565 + 48) ,0 + 0 ,1166 -(782 + 356) );v94.BackgroundTransparency=1;v94.Font=Enum.Font.SourceSans;v94.Text="作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏";v94.TextColor3=Color3.fromRGB(220,225,512 -(176 + 91) );v94.TextSize=33 -20 ;v94.TextXAlignment=Enum.TextXAlignment.Left;v94.Parent=v57;local v105=Instance.new(v7("\184\248\84\38\62\77\120\137\241","\26\236\157\44\82\114\44"));v105.Size=UDim2.new(1 -0 , -(1120 -(975 + 117)),0,1893 -(157 + 1718) );v105.Position=UDim2.new(0 + 0 ,70 -50 ,0,163 -115 );v105.BackgroundTransparency=1019 -(697 + 321) ;v105.Font=Enum.Font.SourceSans;v105.Text="🐧群聊: 1038531272";v105.TextColor3=Color3.fromRGB(435 -275 ,466 -246 ,587 -332 );v105.TextSize=13;v105.TextXAlignment=Enum.TextXAlignment.Left;v105.Parent=v57;local v115;v115=v12.RenderStepped:Connect(function() local v121=0 + 0 ;local v122;local v123;local v124;while true do if (v121==(1 -0)) then v124=nil;while true do if (v122==0) then v123=(tick()%3)/(7 -4) ;v124=Color3.fromHSV(v123,0.8,1228 -(322 + 905) );v122=612 -(602 + 9) ;end if (v122==(1190 -(449 + 740))) then v68.Color=v124;v74.BackgroundColor3=v124;break;end end break;end if (v121==(872 -(826 + 46))) then v122=0;v123=nil;v121=1;end end end);local v116=v11:Create(v57,TweenInfo.new(947.5 -(245 + 702) ,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{[v7("\26\33\198\82\62\39\218\85","\59\74\78\181")]=UDim2.new(1, -(868 -593),1, -95)});v116:Play();task.delay(1 + 2 ,function() local v125=TweenInfo.new(0.6,Enum.EasingStyle.Quart,Enum.EasingDirection.In);v11:Create(v57,v125,{[v7("\21\222\73\83\167\44\222\84","\211\69\177\58\58")]=UDim2.new(1899 -(260 + 1638) ,460 -(382 + 58) ,3 -2 , -95),[v7("\149\228\122\254\238\217\184\240\119\241\221\217\182\235\106\229\232\217\178\235\122\236","\171\215\133\25\149\137")]=1 + 0 }):Play();v11:Create(v68,v125,{[v7("\213\218\51\244\252\32\253\80\228\198\49\227","\34\129\168\82\154\143\80\156")]=1}):Play();v11:Create(v74,v125,{[v7("\167\179\48\0\79\92\134\144\188\55\63\90\79\135\150\162\50\25\77\64\138\156","\233\229\210\83\107\40\46")]=1 -0 }):Play();v11:Create(v82,v125,{[v7("\245\71\42\194\49\211\67\60\197\21\192\80\55\216\6\216","\101\161\34\82\182")]=2 -1 }):Play();v11:Create(v94,v125,{[v7("\220\8\65\234\239\240\131\32\251\29\88\236\222\236\129\55","\78\136\109\57\158\187\130\226")]=1}):Play();local v126=v11:Create(v105,v125,{[v7("\10\58\225\229\10\45\248\255\45\47\248\227\59\49\250\232","\145\94\95\153")]=1206 -(902 + 303) });v126:Play();v126.Completed:Connect(function() local v128=0 -0 ;local v129;while true do if (v128==(0 -0)) then v129=0;while true do if ((0 + 0)==v129) then if v115 then v115:Disconnect();end v50:Destroy();break;end end break;end end end);end);end print("[Taibao Translator] 极速汉化引擎启动...");v23();task.spawn(function() local v117=1690 -(1121 + 569) ;while true do if (v117==(214 -(22 + 192))) then task.wait(683.2 -(483 + 200) );v24();break;end end end);
+-----------------------------------------------------------
+-- 📚 [第一层] 超级游戏术语字典 (0 毫秒延迟，优先匹配)
+-----------------------------------------------------------
+local SuperDictionary = {
+    -- 核心控制与挂机
+    ["Auto Farm"] = "自动挂机",
+    ["Auto Attack"] = "自动攻击",
+    ["Auto Collect"] = "自动拾取",
+    ["Auto Quest"] = "自动任务",
+    ["Auto Stats"] = "自动加点",
+    ["Auto Rebirth"] = "自动转生",
+    ["Auto Buy"] = "自动购买",
+    ["Auto Sell"] = "自动出售",
+    ["Auto Equip"] = "自动装备",
+    ["Bring Mobs"] = "自动吸怪",
+    ["Kill Aura"] = "杀戮光环",
+    ["God Mode"] = "无敌模式",
+    ["Infinite Jump"] = "无限跳跃",
+    ["Noclip"] = "穿墙模式",
+    ["Fly"] = "飞行",
+    ["WalkSpeed"] = "移动速度",
+    ["JumpPower"] = "跳跃高度",
+    ["Teleport"] = "传送",
+    ["ESP"] = "透视",
+
+    -- 菜单选项卡
+    ["Main"] = "主页",
+    ["Combat"] = "战斗",
+    ["Player"] = "玩家",
+    ["Visuals"] = "视觉/透视",
+    ["Misc"] = "杂项",
+    ["Settings"] = "设置",
+    ["Configs"] = "配置保存",
+    ["Shop"] = "商店",
+
+    -- 通用 UI 组件与状态
+    ["Select Weapon"] = "选择武器",
+    ["Select Method"] = "选择模式",
+    ["Select Target"] = "选择目标",
+    ["Select Player"] = "选择玩家",
+    ["Toggle"] = "开关",
+    ["Enabled"] = "已开启",
+    ["Disabled"] = "已关闭",
+    ["Enable"] = "开启",
+    ["Disable"] = "关闭",
+    ["Status"] = "当前状态",
+    ["Refresh"] = "刷新列表",
+    ["Close"] = "关闭",
+    ["Minimize"] = "最小化"
+}
+
+local TranslationCache = {}
+for eng, chn in pairs(SuperDictionary) do
+    TranslationCache[eng] = chn
+end
+
+-----------------------------------------------------------
+-- 🛡️ [第二层] 智能过滤规则 (跳过玩家名字、数字、网址)
+-----------------------------------------------------------
+local function isPlayerName(text)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if text == player.Name or text == player.DisplayName then return true end
+    end
+    return false
+end
+
+local function shouldSkipText(text)
+    if not text or type(text) ~= "string" or text:match("^%s*$") then return true end
+    local trimmed = text:match("^%s*(.-)%s*$")
+    if #trimmed <= 1 or tonumber(trimmed) then return true end
+    if trimmed:match("^%$?%d+[kKmMbB%d%,%.%s]*$") or trimmed:match("^https?://") or trimmed:match("discord%.gg") then return true end
+    if isPlayerName(trimmed) then return true end
+    return false
+end
+
+-----------------------------------------------------------
+-- 🌐 [第三层] 自动公共翻译引擎 (无需任何配置)
+-----------------------------------------------------------
+local function httpRequest(url)
+    if request then return request({Url = url, Method = "GET"}).Body
+    elseif http_request then return http_request({Url = url, Method = "GET"}).Body
+    elseif syn and syn.request then return syn.request({Url = url, Method = "GET"}).Body
+    else return game:HttpGet(url) end
+end
+
+local function translateFree(text)
+    local encodedText = HttpService:UrlEncode(text)
+    local url = string.format("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=%s", encodedText)
+    local success, response = pcall(function() return httpRequest(url) end)
+
+    if success and response then
+        local decodedSuccess, decoded = pcall(function() return HttpService:JSONDecode(response) end)
+        if decodedSuccess and decoded and decoded[1] then
+            local translated = ""
+            for _, item in ipairs(decoded[1]) do
+                if item[1] then translated = translated .. item[1] end
+            end
+            if translated ~= "" then return translated end
+        end
+    end
+    return text
+end
+
+local function translateSmart(text)
+    local trimmed = text:match("^%s*(.-)%s*$")
+    if shouldSkipText(trimmed) then return text end
+    if TranslationCache[trimmed] then return TranslationCache[trimmed] end
+
+    local translatedResult = translateFree(trimmed)
+    if translatedResult and translatedResult ~= "" and translatedResult ~= trimmed then
+        TranslationCache[trimmed] = translatedResult
+        return translatedResult
+    end
+    return text
+end
+
+-----------------------------------------------------------
+-- 🔍 [第四层] 动态 UI 监听与绑定 (自动屏蔽 Roblox 原生界面)
+-----------------------------------------------------------
+local function processUI(element)
+    -- 🛑 核心过滤：不触发 Roblox 自带原生界面 (系统设置、提示窗、默认排位表等)
+    if element:IsDescendantOf(game:GetService("CoreGui"):FindFirstChild("RobloxGui")) then return end
+    if element:IsDescendantOf(game:GetService("CoreGui"):FindFirstChild("RobloxPromptGui")) then return end
+
+    if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
+        if element.Text and #element.Text > 0 then
+            task.spawn(function()
+                local trans = translateSmart(element.Text)
+                if element and element.Parent and trans ~= element.Text then element.Text = trans end
+            end)
+        end
+
+        element:GetPropertyChangedSignal("Text"):Connect(function()
+            if not TranslationCache[element.Text] and not shouldSkipText(element.Text) then
+                task.spawn(function()
+                    local trans = translateSmart(element.Text)
+                    if element and element.Parent then element.Text = trans end
+                end)
+            end
+        end)
+    end
+end
+
+local function startScan()
+    local containers = {PlayerGui, CoreGui}
+    if gethui then pcall(function() table.insert(containers, gethui()) end) end
+
+    for _, container in ipairs(containers) do
+        for _, obj in ipairs(container:GetDescendants()) do processUI(obj) end
+        container.DescendantAdded:Connect(processUI)
+    end
+end
+
+-----------------------------------------------------------
+-- 🎨 [纯彩虹跑马灯弹窗] (2.5秒自动淡出)
+-----------------------------------------------------------
+local function showAuthorNotification()
+    local notifyGui = Instance.new("ScreenGui")
+    notifyGui.Name = "TaibaoNotifyGui"
+    notifyGui.ResetOnSpawn = false
+    notifyGui.DisplayOrder = 9999
+    
+    if gethui then notifyGui.Parent = gethui()
+    elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
+    else notifyGui.Parent = CoreGui end
+
+    -- 🔊 播放开场音效
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://602698205"
+    sound.Volume = 1
+    sound.Parent = notifyGui
+    sound:Play()
+
+    -- 卡片主体
+    local cardFrame = Instance.new("Frame")
+    cardFrame.Name = "NotifyCard"
+    cardFrame.Size = UDim2.new(0, 260, 0, 36)
+    cardFrame.Position = UDim2.new(1, 20, 1, -56)
+    cardFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
+    cardFrame.BackgroundTransparency = 0
+    cardFrame.BorderSizePixel = 0
+    cardFrame.Parent = notifyGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = cardFrame
+
+    -- 🌈 彩虹边框
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Transparency = 0
+    stroke.Parent = cardFrame
+
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 4, 1, -12)
+    accentBar.Position = UDim2.new(0, 6, 0, 6)
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = cardFrame
+
+    local barCorner = Instance.new("UICorner")
+    barCorner.CornerRadius = UDim.new(0, 4)
+    barCorner.Parent = accentBar
+
+    -- 📜 跑马灯效果
+    local marqueeContainer = Instance.new("Frame")
+    marqueeContainer.Name = "MarqueeContainer"
+    marqueeContainer.Size = UDim2.new(1, -22, 1, 0)
+    marqueeContainer.Position = UDim2.new(0, 16, 0, 0)
+    marqueeContainer.BackgroundTransparency = 1
+    marqueeContainer.ClipsDescendants = true
+    marqueeContainer.Parent = cardFrame
+
+    local singleText = "✨ 界面自动汉化已就绪  |  作者: Taibao001  |  🐧群聊: 1038531272     "
+    
+    local marqueeLabel = Instance.new("TextLabel")
+    marqueeLabel.Name = "MarqueeText"
+    marqueeLabel.Size = UDim2.new(0, 2000, 1, 0)
+    marqueeLabel.Position = UDim2.new(0, 0, 0, 0)
+    marqueeLabel.BackgroundTransparency = 1
+    marqueeLabel.Font = Enum.Font.SourceSansBold
+    marqueeLabel.Text = singleText .. singleText
+    marqueeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    marqueeLabel.TextSize = 14
+    marqueeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    marqueeLabel.Parent = marqueeContainer
+
+    local singleTextWidth = TextService:GetTextSize(
+        singleText, 
+        marqueeLabel.TextSize, 
+        marqueeLabel.Font, 
+        Vector2.new(10000, 36)
+    ).X
+
+    local scrollSpeed = 65
+    local xOffset = 0
+
+    local scrollConnection
+    scrollConnection = RunService.RenderStepped:Connect(function(deltaTime)
+        xOffset = xOffset - (scrollSpeed * deltaTime)
+        if math.abs(xOffset) >= singleTextWidth then
+            xOffset = xOffset + singleTextWidth
+        end
+        marqueeLabel.Position = UDim2.new(0, xOffset, 0, 0)
+
+        local hue = (tick() % 2) / 2
+        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
+        stroke.Color = rainbowColor
+        accentBar.BackgroundColor3 = rainbowColor
+    end)
+
+    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -56)})
+    tweenIn:Play()
+
+    task.delay(2.5, function()
+        local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        
+        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -56), BackgroundTransparency = 1}):Play()
+        TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
+        TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
+        
+        local tweenOut = TweenService:Create(marqueeLabel, tweenInfoOut, {TextTransparency = 1})
+        tweenOut:Play()
+
+        tweenOut.Completed:Connect(function()
+            if scrollConnection then 
+                scrollConnection:Disconnect()
+                scrollConnection = nil
+            end
+            notifyGui:Destroy()
+        end)
+    end)
+end
+
+-----------------------------------------------------------
+-- 🚀 [启动]
+-----------------------------------------------------------
+print("[Taibao Translator] 汉化已成功运行")
+startScan()
+
+task.spawn(function()
+    task.wait(0.2)
+    showAuthorNotification()
+end)
