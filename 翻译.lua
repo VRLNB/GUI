@@ -1,6 +1,6 @@
 -- ========================================================
--- Roblox 极速 UI 汉化脚本 (零配置免密钥版 - 右下角纯彩虹跑马灯)
--- 作者: Taibao001  |  🐧群聊: 1038531272
+-- Roblox 极速 UI 汉化脚本 (全界面精准匹配版 - 右下角纯彩虹跑马灯)
+-- 作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272
 -- ========================================================
 
 local HttpService = game:GetService("HttpService")
@@ -13,7 +13,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -----------------------------------------------------------
--- 📚 [第一层] 超级游戏术语字典 (0 毫秒延迟，优先匹配)
+-- 📚 [第一层] 拓展版游戏术语字典 (0 毫秒延迟，优先匹配)
 -----------------------------------------------------------
 local SuperDictionary = {
     -- 核心控制与挂机
@@ -37,7 +37,23 @@ local SuperDictionary = {
     ["Teleport"] = "传送",
     ["ESP"] = "透视",
 
-    -- 菜单选项卡
+    -- 截图特定常用词库
+    ["X-Ray: OFF"] = "透视: 关",
+    ["X-Ray: ON"] = "透视: 开",
+    ["X-Ray"] = "X光透视",
+    ["Fling: OFF"] = "甩人: 关",
+    ["Fling: ON"] = "甩人: 开",
+    ["Fling"] = "甩人/击飞",
+    ["Ground Land: ON"] = "着地: 开",
+    ["Ground Land: OFF"] = "着地: 关",
+    ["Homelander: ON"] = "祖国人: 开",
+    ["Homelander: OFF"] = "祖国人: 关",
+    ["Random Voicelines"] = "随机台词",
+    ["Jerk Off R15"] = "动作 R15",
+    ["ON"] = "开",
+    ["OFF"] = "关",
+
+    -- 菜单选项卡与状态
     ["Main"] = "主页",
     ["Combat"] = "战斗",
     ["Player"] = "玩家",
@@ -46,8 +62,6 @@ local SuperDictionary = {
     ["Settings"] = "设置",
     ["Configs"] = "配置保存",
     ["Shop"] = "商店",
-
-    -- 通用 UI 组件与状态
     ["Select Weapon"] = "选择武器",
     ["Select Method"] = "选择模式",
     ["Select Target"] = "选择目标",
@@ -69,7 +83,7 @@ for eng, chn in pairs(SuperDictionary) do
 end
 
 -----------------------------------------------------------
--- 🛡️ [第二层] 智能过滤规则 (跳过玩家名字、数字、网址)
+-- 🛡️ [第二层] 精准过滤规则
 -----------------------------------------------------------
 local function isPlayerName(text)
     for _, player in ipairs(Players:GetPlayers()) do
@@ -87,8 +101,27 @@ local function shouldSkipText(text)
     return false
 end
 
+-- 判断是否属于 Roblox 官方系统 UI 组件
+local function isRobloxSystemUI(element)
+    local current = element
+    while current and current ~= game do
+        local name = current.Name
+        -- 精确跳过 Roblox 官方语音、菜单、顶栏、提示窗等
+        if name == "RobloxGui" or name == "RobloxPromptGui" or name == "CoreGui" and current.Parent == game then
+            if element:IsDescendantOf(CoreGui:FindFirstChild("RobloxGui")) or element:IsDescendantOf(CoreGui:FindFirstChild("RobloxPromptGui")) then
+                return true
+            end
+        end
+        if name:find("VoiceChat") or name:find("InGameMenu") or name:find("TopBar") or name:find("PurchasePrompt") then
+            return true
+        end
+        current = current.Parent
+    end
+    return false
+end
+
 -----------------------------------------------------------
--- 🌐 [第三层] 自动公共翻译引擎 (无需任何配置)
+-- 🌐 [第三层] 自动公共翻译引擎
 -----------------------------------------------------------
 local function httpRequest(url)
     if request then return request({Url = url, Method = "GET"}).Body
@@ -129,12 +162,11 @@ local function translateSmart(text)
 end
 
 -----------------------------------------------------------
--- 🔍 [第四层] 动态 UI 监听与绑定 (自动屏蔽 Roblox 原生界面)
+-- 🔍 [第四层] 深度 UI 监听与遍历 (全面捕获脚本 Gui)
 -----------------------------------------------------------
 local function processUI(element)
-    -- 🛑 核心过滤：不触发 Roblox 自带原生界面 (系统设置、提示窗、默认排位表等)
-    if element:IsDescendantOf(game:GetService("CoreGui"):FindFirstChild("RobloxGui")) then return end
-    if element:IsDescendantOf(game:GetService("CoreGui"):FindFirstChild("RobloxPromptGui")) then return end
+    -- 🛑 严格过滤 Roblox 官方自带 UI
+    if isRobloxSystemUI(element) then return end
 
     if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
         if element.Text and #element.Text > 0 then
@@ -157,7 +189,10 @@ end
 
 local function startScan()
     local containers = {PlayerGui, CoreGui}
+
+    -- 深度搜索所有支持的脚本隐藏容器 (gethui / get_hidden_gui 等)
     if gethui then pcall(function() table.insert(containers, gethui()) end) end
+    if get_hidden_gui then pcall(function() table.insert(containers, get_hidden_gui()) end) end
 
     for _, container in ipairs(containers) do
         for _, obj in ipairs(container:GetDescendants()) do processUI(obj) end
@@ -178,14 +213,12 @@ local function showAuthorNotification()
     elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
     else notifyGui.Parent = CoreGui end
 
-    -- 🔊 播放开场音效
     local sound = Instance.new("Sound")
     sound.SoundId = "rbxassetid://602698205"
     sound.Volume = 1
     sound.Parent = notifyGui
     sound:Play()
 
-    -- 卡片主体
     local cardFrame = Instance.new("Frame")
     cardFrame.Name = "NotifyCard"
     cardFrame.Size = UDim2.new(0, 260, 0, 36)
@@ -199,7 +232,6 @@ local function showAuthorNotification()
     corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = cardFrame
 
-    -- 🌈 彩虹边框
     local stroke = Instance.new("UIStroke")
     stroke.Thickness = 2
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -216,7 +248,6 @@ local function showAuthorNotification()
     barCorner.CornerRadius = UDim.new(0, 4)
     barCorner.Parent = accentBar
 
-    -- 📜 跑马灯效果
     local marqueeContainer = Instance.new("Frame")
     marqueeContainer.Name = "MarqueeContainer"
     marqueeContainer.Size = UDim2.new(1, -22, 1, 0)
@@ -225,7 +256,7 @@ local function showAuthorNotification()
     marqueeContainer.ClipsDescendants = true
     marqueeContainer.Parent = cardFrame
 
-    local singleText = "✨ 界面自动汉化已就绪  |  作者: Taibao001  |  🐧群聊: 1038531272     "
+    local singleText = "✨ 全界面汉化已就绪  |  作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272     "
     
     local marqueeLabel = Instance.new("TextLabel")
     marqueeLabel.Name = "MarqueeText"
@@ -289,7 +320,7 @@ end
 -----------------------------------------------------------
 -- 🚀 [启动]
 -----------------------------------------------------------
-print("[Taibao Translator] 汉化已成功运行")
+print("[Taibao Translator] 汉化脚本运行成功")
 startScan()
 
 task.spawn(function()
