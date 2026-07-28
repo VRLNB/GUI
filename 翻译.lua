@@ -1,5 +1,5 @@
 -- ========================================================
--- Roblox 极速 UI 汉化脚本 (全界面精准匹配版 - 右下角纯彩虹跑马灯)
+-- Roblox 极速 UI 汉化 + 测试用户启动检测脚本
 -- 作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272
 -- ========================================================
 
@@ -8,24 +8,28 @@ local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local TextService = game:GetService("TextService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -----------------------------------------------------------
--- 📚 [第一层] 拓展版游戏术语字典 (0 毫秒延迟，优先匹配)
+-- 🎯 [特定测试用户名 (Name) 启动配置表]
+-----------------------------------------------------------
+local AllowedTesterUsers = {
+    ["YC1232870"] = true,     -- 匹配的测试用户
+     ["no"] = true,   -- 匹配的测试用户
+    -- ["其他测试用户名"] = true,
+}
+
+-----------------------------------------------------------
+-- 📚 [第一层] 游戏术语字典
 -----------------------------------------------------------
 local SuperDictionary = {
-    -- 核心控制与挂机
     ["Auto Farm"] = "自动挂机",
     ["Auto Attack"] = "自动攻击",
     ["Auto Collect"] = "自动拾取",
     ["Auto Quest"] = "自动任务",
     ["Auto Stats"] = "自动加点",
     ["Auto Rebirth"] = "自动转生",
-    ["Auto Buy"] = "自动购买",
-    ["Auto Sell"] = "自动出售",
-    ["Auto Equip"] = "自动装备",
     ["Bring Mobs"] = "自动吸怪",
     ["Kill Aura"] = "杀戮光环",
     ["God Mode"] = "无敌模式",
@@ -37,7 +41,6 @@ local SuperDictionary = {
     ["Teleport"] = "传送",
     ["ESP"] = "透视",
 
-    -- 截图特定常用词库
     ["X-Ray: OFF"] = "透视: 关",
     ["X-Ray: ON"] = "透视: 开",
     ["X-Ray"] = "X光透视",
@@ -48,33 +51,16 @@ local SuperDictionary = {
     ["Ground Land: OFF"] = "着地: 关",
     ["Homelander: ON"] = "祖国人: 开",
     ["Homelander: OFF"] = "祖国人: 关",
-    ["Random Voicelines"] = "随机台词",
-    ["Jerk Off R15"] = "动作 R15",
     ["ON"] = "开",
     ["OFF"] = "关",
 
-    -- 菜单选项卡与状态
     ["Main"] = "主页",
     ["Combat"] = "战斗",
     ["Player"] = "玩家",
     ["Visuals"] = "视觉/透视",
     ["Misc"] = "杂项",
     ["Settings"] = "设置",
-    ["Configs"] = "配置保存",
-    ["Shop"] = "商店",
-    ["Select Weapon"] = "选择武器",
-    ["Select Method"] = "选择模式",
-    ["Select Target"] = "选择目标",
-    ["Select Player"] = "选择玩家",
-    ["Toggle"] = "开关",
-    ["Enabled"] = "已开启",
-    ["Disabled"] = "已关闭",
-    ["Enable"] = "开启",
-    ["Disable"] = "关闭",
-    ["Status"] = "当前状态",
-    ["Refresh"] = "刷新列表",
-    ["Close"] = "关闭",
-    ["Minimize"] = "最小化"
+    ["Close"] = "关闭"
 }
 
 local TranslationCache = {}
@@ -101,13 +87,11 @@ local function shouldSkipText(text)
     return false
 end
 
--- 判断是否属于 Roblox 官方系统 UI 组件
 local function isRobloxSystemUI(element)
     local current = element
     while current and current ~= game do
         local name = current.Name
-        -- 精确跳过 Roblox 官方语音、菜单、顶栏、提示窗等
-        if name == "RobloxGui" or name == "RobloxPromptGui" or name == "CoreGui" and current.Parent == game then
+        if name == "RobloxGui" or name == "RobloxPromptGui" or (name == "CoreGui" and current.Parent == game) then
             if element:IsDescendantOf(CoreGui:FindFirstChild("RobloxGui")) or element:IsDescendantOf(CoreGui:FindFirstChild("RobloxPromptGui")) then
                 return true
             end
@@ -121,7 +105,7 @@ local function isRobloxSystemUI(element)
 end
 
 -----------------------------------------------------------
--- 🌐 [第三层] 自动公共翻译引擎
+-- 🌐 [第三层] 翻译引擎
 -----------------------------------------------------------
 local function httpRequest(url)
     if request then return request({Url = url, Method = "GET"}).Body
@@ -162,10 +146,9 @@ local function translateSmart(text)
 end
 
 -----------------------------------------------------------
--- 🔍 [第四层] 深度 UI 监听与遍历 (全面捕获脚本 Gui)
+-- 🔍 [第四层] 动态 UI 监听与绑定
 -----------------------------------------------------------
 local function processUI(element)
-    -- 🛑 严格过滤 Roblox 官方自带 UI
     if isRobloxSystemUI(element) then return end
 
     if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
@@ -189,8 +172,6 @@ end
 
 local function startScan()
     local containers = {PlayerGui, CoreGui}
-
-    -- 深度搜索所有支持的脚本隐藏容器 (gethui / get_hidden_gui 等)
     if gethui then pcall(function() table.insert(containers, gethui()) end) end
     if get_hidden_gui then pcall(function() table.insert(containers, get_hidden_gui()) end) end
 
@@ -201,7 +182,7 @@ local function startScan()
 end
 
 -----------------------------------------------------------
--- 🎨 [纯彩虹跑马灯弹窗] (2.5秒自动淡出)
+-- 🎨 [通用脚本作者信息弹窗]
 -----------------------------------------------------------
 local function showAuthorNotification()
     local notifyGui = Instance.new("ScreenGui")
@@ -221,10 +202,9 @@ local function showAuthorNotification()
 
     local cardFrame = Instance.new("Frame")
     cardFrame.Name = "NotifyCard"
-    cardFrame.Size = UDim2.new(0, 260, 0, 36)
-    cardFrame.Position = UDim2.new(1, 20, 1, -56)
+    cardFrame.Size = UDim2.new(0, 260, 0, 48)
+    cardFrame.Position = UDim2.new(1, 20, 1, -68)
     cardFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
-    cardFrame.BackgroundTransparency = 0
     cardFrame.BorderSizePixel = 0
     cardFrame.Parent = notifyGui
 
@@ -235,7 +215,6 @@ local function showAuthorNotification()
     local stroke = Instance.new("UIStroke")
     stroke.Thickness = 2
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Transparency = 0
     stroke.Parent = cardFrame
 
     local accentBar = Instance.new("Frame")
@@ -248,82 +227,164 @@ local function showAuthorNotification()
     barCorner.CornerRadius = UDim.new(0, 4)
     barCorner.Parent = accentBar
 
-    local marqueeContainer = Instance.new("Frame")
-    marqueeContainer.Name = "MarqueeContainer"
-    marqueeContainer.Size = UDim2.new(1, -22, 1, 0)
-    marqueeContainer.Position = UDim2.new(0, 16, 0, 0)
-    marqueeContainer.BackgroundTransparency = 1
-    marqueeContainer.ClipsDescendants = true
-    marqueeContainer.Parent = cardFrame
+    local topLabel = Instance.new("TextLabel")
+    topLabel.Size = UDim2.new(1, -22, 0, 20)
+    topLabel.Position = UDim2.new(0, 16, 0, 5)
+    topLabel.BackgroundTransparency = 1
+    topLabel.Font = Enum.Font.SourceSansBold
+    topLabel.Text = "✨ 界面自动汉化已就绪"
+    topLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    topLabel.TextSize = 14
+    topLabel.TextXAlignment = Enum.TextXAlignment.Left
+    topLabel.Parent = cardFrame
 
-    local singleText = "✨ 全界面汉化已就绪  |  作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272     "
-    
-    local marqueeLabel = Instance.new("TextLabel")
-    marqueeLabel.Name = "MarqueeText"
-    marqueeLabel.Size = UDim2.new(0, 2000, 1, 0)
-    marqueeLabel.Position = UDim2.new(0, 0, 0, 0)
-    marqueeLabel.BackgroundTransparency = 1
-    marqueeLabel.Font = Enum.Font.SourceSansBold
-    marqueeLabel.Text = singleText .. singleText
-    marqueeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    marqueeLabel.TextSize = 14
-    marqueeLabel.TextXAlignment = Enum.TextXAlignment.Left
-    marqueeLabel.Parent = marqueeContainer
+    local bottomLabel = Instance.new("TextLabel")
+    bottomLabel.Size = UDim2.new(1, -22, 0, 18)
+    bottomLabel.Position = UDim2.new(0, 16, 0, 24)
+    bottomLabel.BackgroundTransparency = 1
+    bottomLabel.Font = Enum.Font.SourceSans
+    bottomLabel.Text = "作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272"
+    bottomLabel.TextColor3 = Color3.fromRGB(180, 185, 195)
+    bottomLabel.TextSize = 12
+    bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
+    bottomLabel.Parent = cardFrame
 
-    local singleTextWidth = TextService:GetTextSize(
-        singleText, 
-        marqueeLabel.TextSize, 
-        marqueeLabel.Font, 
-        Vector2.new(10000, 36)
-    ).X
-
-    local scrollSpeed = 65
-    local xOffset = 0
-
-    local scrollConnection
-    scrollConnection = RunService.RenderStepped:Connect(function(deltaTime)
-        xOffset = xOffset - (scrollSpeed * deltaTime)
-        if math.abs(xOffset) >= singleTextWidth then
-            xOffset = xOffset + singleTextWidth
-        end
-        marqueeLabel.Position = UDim2.new(0, xOffset, 0, 0)
-
+    local rainbowConnection
+    rainbowConnection = RunService.RenderStepped:Connect(function()
         local hue = (tick() % 2) / 2
         local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
         stroke.Color = rainbowColor
         accentBar.BackgroundColor3 = rainbowColor
     end)
 
-    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -56)})
+    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -68)})
     tweenIn:Play()
 
     task.delay(2.5, function()
         local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-        
-        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -56), BackgroundTransparency = 1}):Play()
+        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -68), BackgroundTransparency = 1}):Play()
         TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
         TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
-        
-        local tweenOut = TweenService:Create(marqueeLabel, tweenInfoOut, {TextTransparency = 1})
+        TweenService:Create(topLabel, tweenInfoOut, {TextTransparency = 1}):Play()
+        local tweenOut = TweenService:Create(bottomLabel, tweenInfoOut, {TextTransparency = 1})
         tweenOut:Play()
 
         tweenOut.Completed:Connect(function()
-            if scrollConnection then 
-                scrollConnection:Disconnect()
-                scrollConnection = nil
-            end
+            if rainbowConnection then rainbowConnection:Disconnect() end
             notifyGui:Destroy()
         end)
     end)
 end
 
 -----------------------------------------------------------
--- 🚀 [启动]
+-- 👑 [测试用户执行脚本时的专属欢迎弹窗]
 -----------------------------------------------------------
-print("[Taibao Translator] 汉化脚本运行成功")
+local function showTesterWelcomeNotification(username)
+    local notifyGui = Instance.new("ScreenGui")
+    notifyGui.Name = "TaibaoTesterWelcomeGui"
+    notifyGui.ResetOnSpawn = false
+    notifyGui.DisplayOrder = 9999
+    
+    if gethui then notifyGui.Parent = gethui()
+    elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
+    else notifyGui.Parent = CoreGui end
+
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://4590662766"
+    sound.Volume = 1.2
+    sound.Parent = notifyGui
+    sound:Play()
+
+    local cardFrame = Instance.new("Frame")
+    cardFrame.Name = "TesterCard"
+    cardFrame.Size = UDim2.new(0, 260, 0, 48)
+    cardFrame.Position = UDim2.new(1, 20, 1, -124)
+    cardFrame.BackgroundColor3 = Color3.fromRGB(24, 20, 36)
+    cardFrame.BorderSizePixel = 0
+    cardFrame.Parent = notifyGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = cardFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = cardFrame
+
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 4, 1, -12)
+    accentBar.Position = UDim2.new(0, 6, 0, 6)
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = cardFrame
+
+    local barCorner = Instance.new("UICorner")
+    barCorner.CornerRadius = UDim.new(0, 4)
+    barCorner.Parent = accentBar
+
+    local topLabel = Instance.new("TextLabel")
+    topLabel.Size = UDim2.new(1, -22, 0, 20)
+    topLabel.Position = UDim2.new(0, 16, 0, 5)
+    topLabel.BackgroundTransparency = 1
+    topLabel.Font = Enum.Font.SourceSansBold
+    topLabel.Text = "👑 测试用户"
+    topLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+    topLabel.TextSize = 14
+    topLabel.TextXAlignment = Enum.TextXAlignment.Left
+    topLabel.Parent = cardFrame
+
+    local bottomLabel = Instance.new("TextLabel")
+    bottomLabel.Size = UDim2.new(1, -22, 0, 18)
+    bottomLabel.Position = UDim2.new(0, 16, 0, 24)
+    bottomLabel.BackgroundTransparency = 1
+    bottomLabel.Font = Enum.Font.SourceSans
+    bottomLabel.Text = "欢迎测试用户: @" .. username
+    bottomLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    bottomLabel.TextSize = 13
+    bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
+    bottomLabel.Parent = cardFrame
+
+    local rainbowConnection
+    rainbowConnection = RunService.RenderStepped:Connect(function()
+        local hue = (tick() % 2) / 2
+        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
+        stroke.Color = rainbowColor
+        accentBar.BackgroundColor3 = rainbowColor
+    end)
+
+    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -124)})
+    tweenIn:Play()
+
+    task.delay(4, function()
+        local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -124), BackgroundTransparency = 1}):Play()
+        TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
+        TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
+        TweenService:Create(topLabel, tweenInfoOut, {TextTransparency = 1}):Play()
+        local tweenOut = TweenService:Create(bottomLabel, tweenInfoOut, {TextTransparency = 1})
+        tweenOut:Play()
+
+        tweenOut.Completed:Connect(function()
+            if rainbowConnection then rainbowConnection:Disconnect() end
+            notifyGui:Destroy()
+        end)
+    end)
+end
+
+-----------------------------------------------------------
+-- 🚀 [启动逻辑：检测“当前运行脚本的人”]
+-----------------------------------------------------------
+print("[Taibao Script] 脚本启动成功")
 startScan()
 
 task.spawn(function()
     task.wait(0.2)
+    
+    -- 1. 弹出通用的汉化信息
     showAuthorNotification()
+
+    -- 2. 检查启动脚本的当前本地用户 (LocalPlayer.Name) 是否在测试名单中
+    if AllowedTesterUsers[LocalPlayer.Name] then
+        showTesterWelcomeNotification(LocalPlayer.Name)
+    end
 end)
