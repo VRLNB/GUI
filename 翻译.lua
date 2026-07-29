@@ -1,5 +1,5 @@
 -- ========================================================
--- Roblox 极速 UI 汉化 + 开发者/测试用户欢迎弹窗 (精简单通道版)
+-- Roblox 极速 UI 汉化 + 开发者/测试用户欢迎弹窗 (完全修复版)
 -- 作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272
 -- ========================================================
 
@@ -24,7 +24,7 @@ local AllowedTesterUsers = {
 }
 
 -----------------------------------------------------------
--- 📚 [翻译缓存与过滤]
+-- 📚 [翻译缓存与精简过滤]
 -----------------------------------------------------------
 local TranslationCache = {}
 
@@ -33,12 +33,14 @@ local function shouldSkipText(text)
     local trimmed = text:match("^%s*(.-)%s*$")
     
     local lower = trimmed:lower()
+    -- 仅过滤无意义的空标签
     if lower == "label" or lower == "textlabel" or lower == "button" or lower == "text" or lower == "frame" then
         return true
     end
 
-    if #trimmed <= 1 or tonumber(trimmed) then return true end
-    if trimmed:match("^%$?%d+[kKmMbB%d%,%.%s]*$") or trimmed:match("^https?://") or trimmed:match("discord%.gg") then return true end
+    -- 纯数字或极短单个字符不翻译
+    if #trimmed <= 1 and tonumber(trimmed) then return true end
+    if trimmed:match("^https?://") or trimmed:match("discord%.gg") then return true end
     return false
 end
 
@@ -84,7 +86,7 @@ local function translateSmart(text)
 end
 
 -----------------------------------------------------------
--- 🔍 [防卡顿动态 UI 监听与绑定]
+-- 🔍 [全容器深度 UI 监听与绑定]
 -----------------------------------------------------------
 local function processSingleUI(element)
     if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
@@ -100,7 +102,7 @@ local function processSingleUI(element)
         local lastTick = 0
         element:GetPropertyChangedSignal("Text"):Connect(function()
             local currentTick = tick()
-            if currentTick - lastTick < 0.5 then return end -- 0.5秒防抖限制，防止频繁改动导致卡顿
+            if currentTick - lastTick < 0.3 then return end -- 防抖限制
             lastTick = currentTick
 
             if not TranslationCache[element.Text] and not shouldSkipText(element.Text) then
@@ -115,16 +117,25 @@ end
 
 local function startScan()
     task.spawn(function()
+        -- 收集所有可能的 UI 容器（包括 PlayerGui、CoreGui 和第三方隐藏 GUI）
+        local containers = {PlayerGui}
+        if CoreGui then table.insert(containers, CoreGui) end
+        if gethui then pcall(function() table.insert(containers, gethui()) end) end
+        if get_hidden_gui then pcall(function() table.insert(containers, get_hidden_gui()) end) end
+
         local count = 0
-        for _, obj in ipairs(PlayerGui:GetDescendants()) do
-            processSingleUI(obj)
-            count = count + 1
-            if count % 50 == 0 then
-                task.wait(0.05) -- 分帧处理，防止瞬间卡死
-            end
+        for _, container in ipairs(containers) do
+            pcall(function()
+                for _, obj in ipairs(container:GetDescendants()) do
+                    processSingleUI(obj)
+                    count = count + 1
+                    if count % 40 == 0 then
+                        task.wait(0.05) -- 分帧处理，防止卡顿
+                    end
+                end
+                container.DescendantAdded:Connect(processSingleUI)
+            end)
         end
-        
-        PlayerGui.DescendantAdded:Connect(processSingleUI)
     end)
 end
 
@@ -192,7 +203,7 @@ local function showAuthorNotification(playSound)
     midLabel.Position = UDim2.new(0, 16, 0, 24)
     midLabel.BackgroundTransparency = 1
     midLabel.Font = Enum.Font.SourceSans
-    midLabel.Text = "🌐 智能模式: 单通道实时翻译"
+    midLabel.Text = "🌐 智能模式: 全域深度翻译"
     midLabel.TextColor3 = Color3.fromRGB(0, 230, 180)
     midLabel.TextSize = 12
     midLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -430,7 +441,7 @@ end
 -----------------------------------------------------------
 -- 🚀 [启动逻辑]
 -----------------------------------------------------------
-print("[Taibao Script] 轻量汉化脚本启动成功")
+print("[Taibao Script] 修复版汉化脚本启动成功")
 startScan()
 
 task.spawn(function()
