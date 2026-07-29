@@ -1,5 +1,5 @@
 -- ========================================================
--- Roblox 极速 UI 汉化 + 开发者/测试用户欢迎弹窗 (完全修复版)
+-- Roblox 终极全量汉化脚本 (已移除所有系统及黑名单拦截)
 -- 作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272
 -- ========================================================
 
@@ -24,7 +24,7 @@ local AllowedTesterUsers = {
 }
 
 -----------------------------------------------------------
--- 📚 [翻译缓存与精简过滤]
+-- 📚 [极简过滤：绝不放过任何菜单文本]
 -----------------------------------------------------------
 local TranslationCache = {}
 
@@ -32,20 +32,15 @@ local function shouldSkipText(text)
     if not text or type(text) ~= "string" or text:match("^%s*$") then return true end
     local trimmed = text:match("^%s*(.-)%s*$")
     
-    local lower = trimmed:lower()
-    -- 仅过滤无意义的空标签
-    if lower == "label" or lower == "textlabel" or lower == "button" or lower == "text" or lower == "frame" then
-        return true
-    end
-
-    -- 纯数字或极短单个字符不翻译
-    if #trimmed <= 1 and tonumber(trimmed) then return true end
+    -- 仅跳过纯网页链接或绝对无意义的单个空格
     if trimmed:match("^https?://") or trimmed:match("discord%.gg") then return true end
+    if #trimmed == 0 then return true end
+    
     return false
 end
 
 -----------------------------------------------------------
--- 🌐 [极速单通道翻译引擎 (Google)]
+-- 🌐 [翻译引擎 (Google)]
 -----------------------------------------------------------
 local function httpRequest(url)
     if request then return request({Url = url, Method = "GET"}).Body
@@ -86,9 +81,10 @@ local function translateSmart(text)
 end
 
 -----------------------------------------------------------
--- 🔍 [全容器深度 UI 监听与绑定]
+-- 🔍 [暴力无死角 UI 监听与绑定]
 -----------------------------------------------------------
 local function processSingleUI(element)
+    -- 取消一切拦截，只要是文本控件全部强制翻译
     if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
         if element.Text and #element.Text > 0 then
             task.spawn(function()
@@ -99,12 +95,7 @@ local function processSingleUI(element)
             end)
         end
 
-        local lastTick = 0
         element:GetPropertyChangedSignal("Text"):Connect(function()
-            local currentTick = tick()
-            if currentTick - lastTick < 0.3 then return end -- 防抖限制
-            lastTick = currentTick
-
             if not TranslationCache[element.Text] and not shouldSkipText(element.Text) then
                 task.spawn(function()
                     local trans = translateSmart(element.Text)
@@ -117,21 +108,16 @@ end
 
 local function startScan()
     task.spawn(function()
-        -- 收集所有可能的 UI 容器（包括 PlayerGui、CoreGui 和第三方隐藏 GUI）
+        -- 穷举所有可能的 GUI 容器，彻底无视任何系统过滤
         local containers = {PlayerGui}
         if CoreGui then table.insert(containers, CoreGui) end
         if gethui then pcall(function() table.insert(containers, gethui()) end) end
         if get_hidden_gui then pcall(function() table.insert(containers, get_hidden_gui()) end) end
 
-        local count = 0
         for _, container in ipairs(containers) do
             pcall(function()
                 for _, obj in ipairs(container:GetDescendants()) do
                     processSingleUI(obj)
-                    count = count + 1
-                    if count % 40 == 0 then
-                        task.wait(0.05) -- 分帧处理，防止卡顿
-                    end
                 end
                 container.DescendantAdded:Connect(processSingleUI)
             end)
@@ -192,7 +178,7 @@ local function showAuthorNotification(playSound)
     topLabel.Position = UDim2.new(0, 16, 0, 5)
     topLabel.BackgroundTransparency = 1
     topLabel.Font = Enum.Font.SourceSansBold
-    topLabel.Text = "✨ 界面自动汉化已就绪"
+    topLabel.Text = "✨ 全局暴力汉化已就绪"
     topLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     topLabel.TextSize = 14
     topLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -203,7 +189,7 @@ local function showAuthorNotification(playSound)
     midLabel.Position = UDim2.new(0, 16, 0, 24)
     midLabel.BackgroundTransparency = 1
     midLabel.Font = Enum.Font.SourceSans
-    midLabel.Text = "🌐 智能模式: 全域深度翻译"
+    midLabel.Text = "🌐 模式: 无视拦截全网翻译"
     midLabel.TextColor3 = Color3.fromRGB(0, 230, 180)
     midLabel.TextSize = 12
     midLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -441,7 +427,7 @@ end
 -----------------------------------------------------------
 -- 🚀 [启动逻辑]
 -----------------------------------------------------------
-print("[Taibao Script] 修复版汉化脚本启动成功")
+print("[Taibao Script] 无拦截暴力汉化脚本启动成功")
 startScan()
 
 task.spawn(function()
