@@ -1,5 +1,5 @@
 -- ========================================================
--- Roblox 终极全量汉化脚本 (已移除所有系统及黑名单拦截)
+-- Roblox 实时智能排队汉化版 (不卡顿 · 实时 API 翻译)
 -- 作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272
 -- ========================================================
 
@@ -12,10 +12,10 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -----------------------------------------------------------
--- 🎯 [用户身份配置表 - 在这里修改你的用户名]
+-- 🎯 [用户身份配置表]
 -----------------------------------------------------------
 local AllowedDevelopers = {
-    ["tgjsz78"] = true,  -- 👈 把这里的名字改成你的 Roblox 用户名！
+    ["tgjsz78"] = true,
 }
 
 local AllowedTesterUsers = {
@@ -24,24 +24,12 @@ local AllowedTesterUsers = {
 }
 
 -----------------------------------------------------------
--- 📚 [极简过滤：绝不放过任何菜单文本]
+-- 🌐 [智能排队与缓存网络翻译引擎 (解决卡顿与并发)]
 -----------------------------------------------------------
 local TranslationCache = {}
+local TranslationQueue = {}
+local IsProcessingQueue = false
 
-local function shouldSkipText(text)
-    if not text or type(text) ~= "string" or text:match("^%s*$") then return true end
-    local trimmed = text:match("^%s*(.-)%s*$")
-    
-    -- 仅跳过纯网页链接或绝对无意义的单个空格
-    if trimmed:match("^https?://") or trimmed:match("discord%.gg") then return true end
-    if #trimmed == 0 then return true end
-    
-    return false
-end
-
------------------------------------------------------------
--- 🌐 [翻译引擎 (Google)]
------------------------------------------------------------
 local function httpRequest(url)
     if request then return request({Url = url, Method = "GET"}).Body
     elseif http_request then return http_request({Url = url, Method = "GET"}).Body
@@ -49,7 +37,7 @@ local function httpRequest(url)
     else return game:HttpGet(url) end
 end
 
-local function translateFree(text)
+local function fetchGoogleTranslate(text)
     local encodedText = HttpService:UrlEncode(text)
     local url = string.format("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=%s", encodedText)
     
@@ -67,39 +55,70 @@ local function translateFree(text)
     return text
 end
 
-local function translateSmart(text)
-    local trimmed = text:match("^%s*(.-)%s*$")
-    if shouldSkipText(trimmed) then return text end
-    if TranslationCache[trimmed] then return TranslationCache[trimmed] end
+-- 队列消费者：每隔 0.15 秒发送一个请求，绝对不卡主线程，也不会被接口限制
+local function processQueue()
+    if IsProcessingQueue then return end
+    IsProcessingQueue = true
+    
+    task.spawn(function()
+        while #TranslationQueue > 0 do
+            local item = table.remove(TranslationQueue, 1)
+            local text = item.text
+            local callback = item.callback
+            
+            if TranslationCache[text] then
+                callback(TranslationCache[text])
+            else
+                local result = fetchGoogleTranslate(text)
+                if result and result ~= "" then
+                    TranslationCache[text] = result
+                    callback(result)
+                else
+                    callback(text)
+                end
+                -- 控制请求节奏，防卡顿防封禁
+                task.wait(0.12)
+            end
+        end
+        IsProcessingQueue = false
+    end)
+end
 
-    local translatedResult = translateFree(trimmed)
-    if translatedResult and translatedResult ~= "" and translatedResult ~= trimmed then
-        TranslationCache[trimmed] = translatedResult
-        return translatedResult
+local function queueTranslate(text, callback)
+    if not text or type(text) ~= "string" or text:match("^%s*$") then return end
+    local trimmed = text:match("^%s*(.-)%s*$")
+    
+    -- 纯数字或链接不送去翻译
+    if tonumber(trimmed) or trimmed:match("^https?://") or trimmed:match("discord%.gg") then return end
+    
+    if TranslationCache[trimmed] then
+        callback(TranslationCache[trimmed])
+        return
     end
-    return text
+    
+    table.insert(TranslationQueue, {text = trimmed, callback = callback})
+    processQueue()
 end
 
 -----------------------------------------------------------
--- 🔍 [暴力无死角 UI 监听与绑定]
+-- 🔍 [UI 动态绑定与安全过滤]
 -----------------------------------------------------------
 local function processSingleUI(element)
-    -- 取消一切拦截，只要是文本控件全部强制翻译
     if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
         if element.Text and #element.Text > 0 then
-            task.spawn(function()
-                local trans = translateSmart(element.Text)
-                if element and element.Parent and trans ~= element.Text then 
-                    element.Text = trans 
+            queueTranslate(element.Text, function(trans)
+                if element and element.Parent and trans ~= element.Text then
+                    element.Text = trans
                 end
             end)
         end
 
         element:GetPropertyChangedSignal("Text"):Connect(function()
-            if not TranslationCache[element.Text] and not shouldSkipText(element.Text) then
-                task.spawn(function()
-                    local trans = translateSmart(element.Text)
-                    if element and element.Parent then element.Text = trans end
+            if element.Text and #element.Text > 0 then
+                queueTranslate(element.Text, function(trans)
+                    if element and element.Parent and trans ~= element.Text then
+                        element.Text = trans
+                    end
                 end)
             end
         end)
@@ -108,7 +127,6 @@ end
 
 local function startScan()
     task.spawn(function()
-        -- 穷举所有可能的 GUI 容器，彻底无视任何系统过滤
         local containers = {PlayerGui}
         if CoreGui then table.insert(containers, CoreGui) end
         if gethui then pcall(function() table.insert(containers, gethui()) end) end
@@ -147,7 +165,6 @@ local function showAuthorNotification(playSound)
     end
 
     local cardFrame = Instance.new("Frame")
-    cardFrame.Name = "NotifyCard"
     cardFrame.Size = UDim2.new(0, 260, 0, 66)
     cardFrame.Position = UDim2.new(1, 20, 1, -86)
     cardFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
@@ -178,7 +195,7 @@ local function showAuthorNotification(playSound)
     topLabel.Position = UDim2.new(0, 16, 0, 5)
     topLabel.BackgroundTransparency = 1
     topLabel.Font = Enum.Font.SourceSansBold
-    topLabel.Text = "✨ 全局暴力汉化已就绪"
+    topLabel.Text = "✨ 智能队列实时汉化已就绪"
     topLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     topLabel.TextSize = 14
     topLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -189,7 +206,7 @@ local function showAuthorNotification(playSound)
     midLabel.Position = UDim2.new(0, 16, 0, 24)
     midLabel.BackgroundTransparency = 1
     midLabel.Font = Enum.Font.SourceSans
-    midLabel.Text = "🌐 模式: 无视拦截全网翻译"
+    midLabel.Text = "⚡ 模式: 智能流控 / 实时翻译"
     midLabel.TextColor3 = Color3.fromRGB(0, 230, 180)
     midLabel.TextSize = 12
     midLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -235,211 +252,13 @@ local function showAuthorNotification(playSound)
 end
 
 -----------------------------------------------------------
--- 🧪 [测试用户欢迎弹窗]
------------------------------------------------------------
-local function showTesterWelcomeNotification(username)
-    local notifyGui = Instance.new("ScreenGui")
-    notifyGui.Name = "TaibaoTesterWelcomeGui"
-    notifyGui.ResetOnSpawn = false
-    notifyGui.DisplayOrder = 9999
-    
-    if gethui then notifyGui.Parent = gethui()
-    elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
-    else notifyGui.Parent = CoreGui end
-
-    local sound = Instance.new("Sound")
-    sound.SoundId = "rbxassetid://4612372428"
-    sound.Volume = 1.2
-    sound.Parent = notifyGui
-    sound:Play()
-
-    local cardFrame = Instance.new("Frame")
-    cardFrame.Name = "TesterCard"
-    cardFrame.Size = UDim2.new(0, 260, 0, 48)
-    cardFrame.Position = UDim2.new(1, 20, 1, -142)
-    cardFrame.BackgroundColor3 = Color3.fromRGB(24, 20, 36)
-    cardFrame.BorderSizePixel = 0
-    cardFrame.Parent = notifyGui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = cardFrame
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 2
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Parent = cardFrame
-
-    local accentBar = Instance.new("Frame")
-    accentBar.Size = UDim2.new(0, 4, 1, -12)
-    accentBar.Position = UDim2.new(0, 6, 0, 6)
-    accentBar.BorderSizePixel = 0
-    accentBar.Parent = cardFrame
-
-    local barCorner = Instance.new("UICorner")
-    barCorner.CornerRadius = UDim.new(0, 4)
-    barCorner.Parent = accentBar
-
-    local topLabel = Instance.new("TextLabel")
-    topLabel.Size = UDim2.new(1, -22, 0, 20)
-    topLabel.Position = UDim2.new(0, 16, 0, 5)
-    topLabel.BackgroundTransparency = 1
-    topLabel.Font = Enum.Font.SourceSansBold
-    topLabel.Text = "🧪 测试用户"
-    topLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-    topLabel.TextSize = 14
-    topLabel.TextXAlignment = Enum.TextXAlignment.Left
-    topLabel.Parent = cardFrame
-
-    local bottomLabel = Instance.new("TextLabel")
-    bottomLabel.Size = UDim2.new(1, -22, 0, 18)
-    bottomLabel.Position = UDim2.new(0, 16, 0, 24)
-    bottomLabel.BackgroundTransparency = 1
-    bottomLabel.Font = Enum.Font.SourceSans
-    bottomLabel.Text = "欢迎测试用户: @" .. username
-    bottomLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    bottomLabel.TextSize = 13
-    bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
-    bottomLabel.Parent = cardFrame
-
-    local rainbowConnection
-    rainbowConnection = RunService.RenderStepped:Connect(function()
-        local hue = (tick() % 2) / 2
-        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
-        stroke.Color = rainbowColor
-        accentBar.BackgroundColor3 = rainbowColor
-    end)
-
-    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -142)})
-    tweenIn:Play()
-
-    task.delay(4, function()
-        local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -142), BackgroundTransparency = 1}):Play()
-        TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
-        TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
-        TweenService:Create(topLabel, tweenInfoOut, {TextTransparency = 1}):Play()
-        local tweenOut = TweenService:Create(bottomLabel, tweenInfoOut, {TextTransparency = 1})
-        tweenOut:Play()
-
-        tweenOut.Completed:Connect(function()
-            if rainbowConnection then rainbowConnection:Disconnect() end
-            notifyGui:Destroy()
-        end)
-    end)
-end
-
------------------------------------------------------------
--- 👑 [开发者欢迎弹窗]
------------------------------------------------------------
-local function showDeveloperWelcomeNotification(username)
-    local notifyGui = Instance.new("ScreenGui")
-    notifyGui.Name = "TaibaoDevWelcomeGui"
-    notifyGui.ResetOnSpawn = false
-    notifyGui.DisplayOrder = 9999
-    
-    if gethui then notifyGui.Parent = gethui()
-    elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
-    else notifyGui.Parent = CoreGui end
-
-    local sound = Instance.new("Sound")
-    sound.SoundId = "rbxassetid://6895082006"
-    sound.Volume = 1.3
-    sound.Parent = notifyGui
-    sound:Play()
-
-    local cardFrame = Instance.new("Frame")
-    cardFrame.Name = "DevCard"
-    cardFrame.Size = UDim2.new(0, 260, 0, 48)
-    cardFrame.Position = UDim2.new(1, 20, 1, -142)
-    cardFrame.BackgroundColor3 = Color3.fromRGB(35, 15, 45)
-    cardFrame.BorderSizePixel = 0
-    cardFrame.Parent = notifyGui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = cardFrame
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 2
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Parent = cardFrame
-
-    local accentBar = Instance.new("Frame")
-    accentBar.Size = UDim2.new(0, 4, 1, -12)
-    accentBar.Position = UDim2.new(0, 6, 0, 6)
-    accentBar.BorderSizePixel = 0
-    accentBar.Parent = cardFrame
-
-    local barCorner = Instance.new("UICorner")
-    barCorner.CornerRadius = UDim.new(0, 4)
-    barCorner.Parent = accentBar
-
-    local topLabel = Instance.new("TextLabel")
-    topLabel.Size = UDim2.new(1, -22, 0, 20)
-    topLabel.Position = UDim2.new(0, 16, 0, 5)
-    topLabel.BackgroundTransparency = 1
-    topLabel.Font = Enum.Font.SourceSansBold
-    topLabel.Text = "👑 开发者"
-    topLabel.TextColor3 = Color3.fromRGB(255, 85, 255)
-    topLabel.TextSize = 14
-    topLabel.TextXAlignment = Enum.TextXAlignment.Left
-    topLabel.Parent = cardFrame
-
-    local bottomLabel = Instance.new("TextLabel")
-    bottomLabel.Size = UDim2.new(1, -22, 0, 18)
-    bottomLabel.Position = UDim2.new(0, 16, 0, 24)
-    bottomLabel.BackgroundTransparency = 1
-    bottomLabel.Font = Enum.Font.SourceSans
-    bottomLabel.Text = "欢迎开发者: @" .. username
-    bottomLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    bottomLabel.TextSize = 13
-    bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
-    bottomLabel.Parent = cardFrame
-
-    local rainbowConnection
-    rainbowConnection = RunService.RenderStepped:Connect(function()
-        local hue = (tick() % 2) / 2
-        local rainbowColor = Color3.fromHSV(hue, 0.9, 1)
-        stroke.Color = rainbowColor
-        accentBar.BackgroundColor3 = rainbowColor
-    end)
-
-    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -142)})
-    tweenIn:Play()
-
-    task.delay(4, function()
-        local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -142), BackgroundTransparency = 1}):Play()
-        TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
-        TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
-        TweenService:Create(topLabel, tweenInfoOut, {TextTransparency = 1}):Play()
-        local tweenOut = TweenService:Create(bottomLabel, tweenInfoOut, {TextTransparency = 1})
-        tweenOut:Play()
-
-        tweenOut.Completed:Connect(function()
-            if rainbowConnection then rainbowConnection:Disconnect() end
-            notifyGui:Destroy()
-        end)
-    end)
-end
-
------------------------------------------------------------
 -- 🚀 [启动逻辑]
 -----------------------------------------------------------
-print("[Taibao Script] 无拦截暴力汉化脚本启动成功")
+print("[Taibao Script] 智能队列流控汉化脚本启动成功")
 startScan()
 
 task.spawn(function()
     task.wait(0.2)
-    
     local isSpecialUser = AllowedDevelopers[LocalPlayer.Name] or AllowedTesterUsers[LocalPlayer.Name]
-
     showAuthorNotification(not isSpecialUser)
-
-    if AllowedDevelopers[LocalPlayer.Name] then
-        showDeveloperWelcomeNotification(LocalPlayer.Name)
-    elseif AllowedTesterUsers[LocalPlayer.Name] then
-        showTesterWelcomeNotification(LocalPlayer.Name)
-    end
 end)
