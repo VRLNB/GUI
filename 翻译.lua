@@ -1,12 +1,448 @@
---[[
- .____                  ________ ___.    _____                           __                
- |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
- |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
- |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
- |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
-         \/          \/         \/    \/                \/     \/     \/                   
-          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
+-- ========================================================
+-- Roblox 极速 UI 汉化 + 开发者/测试用户欢迎弹窗 (精简单通道版)
+-- 作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272
+-- ========================================================
 
-]]--
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;local function v7(v30,v31) local v32={};for v91=1, #v30 do v6(v32,v0(v4(v1(v2(v30,v91,v91 + 1 )),v1(v2(v31,1 + (v91% #v31) ,1 + (v91% #v31) + 1 )))%256 ));end return v5(v32);end local v8=game:GetService(v7("\249\215\207\53\213\190\213\8\216\192\222","\126\177\163\187\69\134\219\167"));local v9=game:GetService(v7("\19\193\43\220\249\49\222","\156\67\173\74\165"));local v10=game:GetService(v7("\23\184\91\19\155\51\79","\38\84\215\41\118\220\70"));local v11=game:GetService(v7("\100\1\39\23\240\99\19\48\4\247\83\19","\158\48\118\66\114"));local v12=game:GetService(v7("\153\49\30\5\118\183\237\162\39\21","\155\203\68\112\86\19\197"));local v13=v9.LocalPlayer;local v14=v13:WaitForChild(v7("\118\209\55\229\69\106\194\237\79","\152\38\189\86\156\32\24\133"));local v15={[v7("\232\80\173\85\230\0\255","\38\156\55\199")]=true};local v16={[v7("\145\94\45\122\64\38\162\20\248","\35\200\29\28\72\115\20\154")]=true,[v7("\23\176","\84\121\223\177\191\237\76")]=true};local v17={};local function v18(v33) local v34=0 -0 ;while true do if (v34==(1559 -(1381 + 178))) then for v241,v242 in ipairs(v9:GetPlayers()) do if ((v33==v242.Name) or (v33==v242.DisplayName)) then return true;end end return false;end end end local function v19(v35) local v36=0;local v37;local v38;while true do if (1==v36) then local v106=0 + 0 ;while true do if (v106==(0 + 0)) then v38=v37:lower();if ((v38==v7("\14\187\137\50\213","\185\98\218\235\87")) or (v38==v7("\223\57\63\242\210\171\201\57\43","\202\171\92\71\134\190")) or (v38==v7("\43\212\56\156\38\207","\232\73\161\76")) or (v38==v7("\175\220\90\73","\126\219\185\34\61")) or (v38==v7("\10\220\95\127\123","\135\108\174\62\18\30\23\147"))) then return true;end v106=1 + 0 ;end if (v106==(3 -2)) then v36=2 + 0 ;break;end end end if (v36==(473 -(381 + 89))) then if v18(v37) then return true;end return false;end if (v36==(2 + 0)) then if (( #v37<=(1 + 0)) or tonumber(v37)) then return true;end if (v37:match(v7("\136\172\110\148\93\170\120\252\189\194\39\230\26\140\118\195\243\165\111\133\93\189\14\141\242","\167\214\137\74\171\120\206\83")) or v37:match(v7("\181\248\38\73\232\180\212\170\125\18","\199\235\144\82\61\152")) or v37:match(v7("\3\31\170\40\8\4\189\110\73\17\190","\75\103\118\217"))) then return true;end v36=4 -1 ;end if (v36==(1156 -(1074 + 82))) then if ( not v35 or (type(v35)~=v7("\168\66\219\169\52\87","\161\219\54\169\192\90\48\80")) or v35:match(v7("\119\7\19\111\13","\69\41\34\96"))) then return true;end v37=v35:match(v7("\130\134\196\64\74\101\241\138\146\25\72\111","\75\220\163\183\106\98"));v36=1;end end end local function v20(v39) local v40=v39;while v40 and (v40~=game)  do local v92=v40.Name;local v93=v92:lower();if ((v92==v7("\245\91\114\24\182\6\224\65\121","\126\167\52\16\116\217")) or (v92==v7("\250\33\34\140\187\1\204\218\33\45\144\160\62\233\193","\156\168\78\64\224\212\121")) or (v92==v7("\36\230\164\218","\174\103\142\197")) or (v92==v7("\98\45\71\44\6\86\249\66\27\90\42\51\87\251\83","\152\54\72\63\88\69\62")) or (v92==v7("\228\200\239\69\209\214\194\85\199\208","\60\180\164\142")) or (v92==v7("\122\75\7\43\43\232\49\80\95\17","\114\56\62\101\73\71\141")) or (v92==v7("\140\230\203\230\185\251\250\212\168","\164\216\137\187")) or (v92==v7("\251\232\22\179\171\251\38\215\232\36","\107\178\134\81\210\198\158"))) then return true;end if (v93:find(v7("\46\1\139\197\175\59\6\131\210","\202\88\110\226\166")) or v93:find(v7("\202\1\133\246\199\198\2\135\249\223","\170\163\111\226\151")) or v93:find(v7("\5\63\162\58\79\37","\73\113\80\210\88\46\87")) or v93:find(v7("\145\57\223\17\239\128\63\200\2\245\142\33\221\6","\135\225\76\173\114")) or v93:find(v7("\10\225\185\169\169\175\171\19\254\172","\199\122\141\216\208\204\221")) or v93:find(v7("\161\216\17\244\125\228\175\210\17\226\124","\150\205\189\112\144\24")) or v93:find(v7("\38\140\190\88","\112\69\228\223\44\100\232\113")) or v93:find(v7("\214\10\5\209\186\121\133\220\30\19","\230\180\127\103\179\214\28")) or (v93:find(v7("\143\10\77\67\227\84\233","\128\236\101\63\38\132\33")) and (v93:find(v7("\190\166\19\72\185\243","\175\204\201\113\36\214\139")) or v93:find(v7("\74\201\59\201","\100\39\172\85\188")) or v93:find(v7("\175\121\186\139\35\172\123\178","\83\205\24\217\224"))))) then return true;end v40=v40.Parent;end return false;end local function v21(v41) if request then return request({[v7("\211\215\193","\93\134\165\173")]=v41,[v7("\147\247\213\202\53\202","\30\222\146\161\162\90\174\210")]=v7("\194\107\68","\106\133\46\16")}).Body;elseif http_request then return http_request({[v7("\109\50\127","\32\56\64\19\156\58")]=v41,[v7("\119\205\241\94\85\246","\224\58\168\133\54\58\146")]=v7("\126\115\127","\107\57\54\43\157\21\230\231")}).Body;elseif (syn and syn.request) then return syn.request({[v7("\238\153\29","\175\187\235\113\149\217\188")]=v41,[v7("\17\170\149\68\236\125","\24\92\207\225\44\131\25")]=v7("\108\246\140","\29\43\179\216\44\123")}).Body;else return game:HttpGet(v41);end end local v22={{[v7("\169\192\48\73","\44\221\185\64")]=v7("\3\238\70\88","\19\97\135\40\63"),[v7("\187\78\63","\81\206\60\83\91\79")]=v7("\70\191\196\98\60\153\2\235\79\187\217\60\44\204\74\170\71\191\217\100\42\141\64\173\77\185\223\97\32\197\89\176\92\170\222\97\35\194\89\171\92\229\211\125\34\140\89\182\79\165\195\126\46\215\72\251\79\187\217\63\57\198\95\183\71\164\222\47\124\141\29\226\90\164\141\104\39\142\101\165\64\184","\196\46\203\176\18\79\163\45")},{[v7("\172\59\110\27","\143\216\66\30\126\68\155")]=v7("\173\199\2\204\201\166","\129\202\168\109\171\165\195\183"),[v7("\55\74\59","\134\66\56\87\184\190\116")]=v7("\52\37\29\171\10\177\110\122\40\35\8\181\10\231\32\33\57\127\14\180\22\236\45\48\61\33\0\168\87\232\46\56\115\37\27\186\23\248\45\52\40\52\54\186\86\248\40\59\59\61\12\228\26\231\40\48\50\37\84\188\13\243\103\38\48\108\8\174\13\228\103\33\48\108\19\179\84\200\15\115\56\37\84\175\95\250\124\112\47","\85\92\81\105\219\121\139\65")},{[v7("\233\170\64\64","\191\157\211\48\37\28")]=v7("\216\16\251\27\54\218","\90\191\127\148\124"),[v7("\109\149\34","\119\24\231\78")]=v7("\138\57\177\90\207\26\94\205\57\183\75\210\83\29\131\57\160\4\219\79\30\133\33\160\75\204\73\2\204\46\170\71\147\84\3\131\35\182\70\221\84\20\189\44\234\89\213\78\22\142\40\250\73\208\73\20\140\57\248\71\154\83\29\223\44\176\94\211\6\5\142\112\191\66\145\99\63\196\41\177\23\200\6\0\223\104\182","\113\226\77\197\42\188\32")},{[v7("\46\15\228\176","\213\90\118\148")]=v7("\86\55\185\83\64\84\60\173","\45\59\78\212\54"),[v7("\5\68\143","\144\112\54\227\235\230\78\205")]=v7("\187\60\27\236\195\1\252\103\14\236\217\21\190\49\2\249\221\84\161\49\65\232\194\90\189\59\3\253\196\94\183\102\1\249\196\20\180\45\27\163\193\6\246\59\73\240\209\85\180\56\14\245\194\6\182\38\19\230\216\22\144\6","\59\211\72\111\156\176")}};local function v23(v42) local v43=v8:UrlEncode(v42);for v95,v96 in ipairs(v22) do local v97=0;local v98;local v99;while true do if (v97==(0 + 0)) then v98,v99=nil;if (v96.type==v7("\76\142\237\42","\77\46\231\131")) then local v271=v8:JSONEncode({{[v7("\142\81\174\84","\32\218\52\214")]=v42}});local v272=request or http_request or (syn and syn.request) ;if v272 then v98,v99=pcall(function() return v272({[v7("\123\5\61","\58\46\119\81\200\145\208\37")]=v96.url,[v7("\6\137\36\164\166\185","\86\75\236\80\204\201\221")]=v7("\66\110\68\177","\235\18\33\23\229\158"),[v7("\120\191\192\191\85\168\210","\219\48\218\161")]={[v7("\199\126\114\93\222\65\244\169\69\101\89\222","\128\132\17\28\41\187\47")]=v7("\0\34\22\54\84\2\51\18\51\82\15\125\12\41\82\15","\61\97\82\102\90")},[v7("\142\33\175\82","\105\204\78\203\43\167\55\126")]=v271}).Body;end);end else local v273=string.format(v96.url,v43);v98,v99=pcall(function() return v21(v273);end);end v97=1;end if (v97==(1 + 0)) then if (v98 and v99 and ( #v99>(0 -0))) then local v274=1726 -(1668 + 58) ;local v275;local v276;while true do if (v274==0) then v275,v276=pcall(function() return v8:JSONDecode(v99);end);if (v275 and v276) then if ((v96.type==v7("\167\163\45\25","\49\197\202\67\126\115\100\167")) and v276[627 -(512 + 114) ] and v276[1].translations and v276[2 -1 ].translations[1 -0 ]) then local v319=v276[3 -2 ].translations[1 + 0 ].text;if (v319 and (v319~="")) then return v319;end elseif ((v96.type==v7("\48\84\208\46\140\83","\62\87\59\191\73\224\54")) and v276[1 + 0 ]) then local v321=0 + 0 ;local v322;while true do if (v321==(3 -2)) then if (v322~="") then return v322;end break;end if (v321==0) then local v326=0;while true do if (v326==(1995 -(109 + 1885))) then v321=1;break;end if ((1469 -(1269 + 200))==v326) then v322="";for v327,v328 in ipairs(v276[1]) do if v328[1 -0 ] then v322=v322   .. v328[816 -(98 + 717) ] ;end end v326=827 -(802 + 24) ;end end end end elseif ((v96.type==v7("\234\27\247\204\234\13\232\208","\169\135\98\154")) and v276.responseData and v276.responseData.translatedText) then local v324=v276.responseData.translatedText;if ((v324~="") and  not v324:find(v7("\230\78\9\113\208\28\250\242\55\19\117\207\29\225\229\80","\168\171\23\68\52\157\83"))) then return v324;end end end break;end end end break;end end end return v42;end local function v24(v44) local v45=0;local v46;local v47;while true do if (v45==(1 -0)) then if v17[v46] then return v17[v46];end v47=v23(v46);v45=2 -0 ;end if (v45==(1 + 1)) then if (v47 and (v47~="") and (v47~=v46)) then v17[v46]=v47;return v47;end return v44;end if (0==v45) then v46=v44:match(v7("\202\52\230\231\109\99\202\189\52\230\231\97","\231\148\17\149\205\69\77"));if v19(v46) then return v44;end v45=1 + 0 ;end end end local function v25(v48) local v49=0 + 0 ;while true do if (v49==(0 + 0)) then if v20(v48) then return;end if (v48:IsA(v7("\180\162\223\239\123\254\130\162\203","\159\224\199\167\155\55")) or v48:IsA(v7("\195\246\36\198\213\230\40\198\248\253","\178\151\147\92")) or v48:IsA(v7("\184\248\84\38\48\67\98","\26\236\157\44\82\114\44"))) then local v265=0;while true do if ((0 -0)==v265) then if (v48.Text and ( #v48.Text>0)) then task.spawn(function() local v313=0;local v314;while true do if (v313==0) then v314=v24(v48.Text);if (v48 and v48.Parent and (v314~=v48.Text)) then v48.Text=v314;end break;end end end);end v48:GetPropertyChangedSignal(v7("\30\43\205\79","\59\74\78\181")):Connect(function() if ( not v17[v48.Text] and  not v19(v48.Text)) then task.spawn(function() local v317=0 -0 ;local v318;while true do if (v317==(0 + 0)) then v318=v24(v48.Text);if (v48 and v48.Parent) then v48.Text=v318;end break;end end end);end end);break;end end end break;end end end local function v26() task.spawn(function() local v100={v14,v10};if gethui then pcall(function() table.insert(v100,gethui());end);end if get_hidden_gui then pcall(function() table.insert(v100,get_hidden_gui());end);end local v101=0 + 0 ;for v102,v103 in ipairs(v100) do local v104=0;local v105;while true do if (v104==(0 + 0)) then v105=v103:GetDescendants();for v277,v278 in ipairs(v105) do local v279=1433 -(797 + 636) ;while true do if (1==v279) then if ((v101%30)==0) then task.wait();end break;end if (v279==0) then v25(v278);v101=v101 + 1 ;v279=4 -3 ;end end end v104=1620 -(1427 + 192) ;end if (v104==1) then v103.DescendantAdded:Connect(v25);break;end end end end);end local function v27(v50) local v51=0 + 0 ;local v52;local v53;local v54;local v55;local v56;local v57;local v58;local v59;local v60;local v61;local v62;while true do if (v51==(11 -6)) then local v107=0;while true do if ((1 + 0)==v107) then v58.Parent=v53;v59=Instance.new(v7("\5\135\100\168\29\131\126\185\61","\220\81\226\28"));v107=1 + 1 ;end if (v107==2) then v59.Size=UDim2.new(327 -(192 + 134) , -(1298 -(316 + 960)),0,9 + 7 );v59.Position=UDim2.new(0,13 + 3 ,0 + 0 ,91 -67 );v107=554 -(83 + 468) ;end if (v107==0) then v58.TextSize=1820 -(1202 + 604) ;v58.TextXAlignment=Enum.TextXAlignment.Left;v107=4 -3 ;end if ((4 -1)==v107) then v59.BackgroundTransparency=2 -1 ;v51=331 -(45 + 280) ;break;end end end if (8==v51) then v60.TextXAlignment=Enum.TextXAlignment.Left;v60.Parent=v53;v61=nil;v61=v12.RenderStepped:Connect(function() local v243=(tick()%(2 + 0))/(2 + 0) ;local v244=Color3.fromHSV(v243,0.8 + 0 ,1 + 0 );v55.Color=v244;v56.BackgroundColor3=v244;end);v62=v11:Create(v53,TweenInfo.new(0.4 + 0 ,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{[v7("\210\45\244\85\111\120\201\236","\166\130\66\135\60\27\17")]=UDim2.new(1, -275,1 -0 , -(1997 -(340 + 1571)))});v62:Play();task.delay(1.7999999999999998 + 1 ,function() local v247=0;local v248;local v249;while true do if (v247==(1775 -(1733 + 39))) then local v294=0;while true do if (v294==(0 -0)) then v249=v11:Create(v60,v248,{[v7("\38\248\45\32\66\0\252\59\39\102\19\239\48\58\117\11","\22\114\157\85\84")]=1});v249:Play();v294=1035 -(125 + 909) ;end if (v294==1) then v247=4;break;end end end if (v247==(1952 -(1096 + 852))) then v249.Completed:Connect(function() if v61 then v61:Disconnect();end v52:Destroy();end);break;end if (v247==(0 + 0)) then local v295=0 -0 ;while true do if (v295==(0 + 0)) then v248=TweenInfo.new(512.4 -(409 + 103) ,Enum.EasingStyle.Quart,Enum.EasingDirection.In);v11:Create(v53,v248,{[v7("\116\69\221\124\36\77\69\192","\80\36\42\174\21")]=UDim2.new(1,256 -(46 + 190) ,1, -(181 -(51 + 44))),[v7("\108\17\52\113\73\2\56\111\64\20\3\104\79\30\36\106\79\2\50\116\77\9","\26\46\112\87")]=1 + 0 }):Play();v295=1;end if (v295==(1318 -(1114 + 203))) then v247=1;break;end end end if (v247==2) then v11:Create(v58,v248,{[v7("\130\176\254\196\130\167\231\222\165\165\231\194\179\187\229\201","\176\214\213\134")]=727 -(228 + 498) }):Play();v11:Create(v59,v248,{[v7("\192\168\174\192\156\68\88\250\190\166\213\186\83\87\247\180","\57\148\205\214\180\200\54")]=1 + 0 }):Play();v247=3;end if (v247==1) then v11:Create(v55,v248,{[v7("\141\49\170\122\172\175\68\166\188\45\168\109","\212\217\67\203\20\223\223\37")]=1 + 0 }):Play();v11:Create(v56,v248,{[v7("\152\140\171\217\189\159\167\199\180\137\156\192\187\131\187\194\187\159\173\220\185\148","\178\218\237\200")]=1}):Play();v247=2;end end end);break;end if (v51==(667 -(174 + 489))) then local v111=0 -0 ;while true do if (v111==(1907 -(830 + 1075))) then v58.Font=Enum.Font.SourceSansBold;v58.Text="✨ 界面自动汉化已就绪";v111=527 -(303 + 221) ;end if ((1270 -(231 + 1038))==v111) then v58.Position=UDim2.new(0,14 + 2 ,1162 -(171 + 991) ,20 -15 );v58.BackgroundTransparency=2 -1 ;v111=4 -2 ;end if (v111==3) then v58.TextColor3=Color3.fromRGB(255,205 + 50 ,893 -638 );v51=5;break;end if (v111==(0 -0)) then v58=Instance.new(v7("\104\0\216\187\14\217\94\0\204","\184\60\101\160\207\66"));v58.Size=UDim2.new(1 -0 , -(67 -45),1248 -(111 + 1137) ,176 -(91 + 67) );v111=1;end end end if (v51==(0 -0)) then v52=Instance.new(v7("\22\210\72\95\182\43\246\79\83","\211\69\177\58\58"));v52.Name=v7("\131\228\112\247\232\196\153\234\109\252\239\210\144\240\112","\171\215\133\25\149\137");v52.ResetOnSpawn=false;v52.DisplayOrder=2495 + 7504 ;if gethui then v52.Parent=gethui();elseif (syn and syn.protect_gui) then local v296=0;while true do if (v296==(523 -(423 + 100))) then syn.protect_gui(v52);v52.Parent=v10;break;end end else v52.Parent=v10;end if (v50~=false) then local v267=0 + 0 ;local v268;while true do if (v267==(5 -3)) then v268:Play();break;end if (1==v267) then v268.Volume=1 + 0 ;v268.Parent=v52;v267=2;end if (v267==0) then v268=Instance.new(v7("\210\199\39\244\235","\34\129\168\82\154\143\80\156"));v268.SoundId=v7("\151\176\43\10\91\93\140\145\187\55\81\7\1\223\213\224\101\82\16\28\217\208","\233\229\210\83\107\40\46");v267=772 -(326 + 445) ;end end end v53=Instance.new(v7("\231\80\51\219\0","\101\161\34\82\182"));v51=1;end if (v51==(8 -6)) then v54.CornerRadius=UDim.new(0 -0 ,8);v54.Parent=v53;v55=Instance.new(v7("\200\228\39\193\92\184\246\200","\215\157\173\116\181\46"));v55.Thickness=4 -2 ;v55.ApplyStrokeMode=Enum.ApplyStrokeMode.Border;v55.Parent=v53;v56=Instance.new(v7("\19\166\138\255\223","\186\85\212\235\146"));v51=3;end if (3==v51) then v56.Size=UDim2.new(711 -(530 + 181) ,885 -(614 + 267) ,1, -(44 -(19 + 13)));v56.Position=UDim2.new(0 -0 ,6,0,6);v56.BorderSizePixel=0 -0 ;v56.Parent=v53;v57=Instance.new(v7("\247\168\53\241\43\224\93\208","\56\162\225\118\158\89\142"));v57.CornerRadius=UDim.new(0 -0 ,2 + 2 );v57.Parent=v56;v51=6 -2 ;end if (v51==(1 -0)) then v53.Name=v7("\198\2\77\247\221\251\161\47\250\9","\78\136\109\57\158\187\130\226");v53.Size=UDim2.new(1812 -(1293 + 519) ,530 -270 ,0 -0 ,66);v53.Position=UDim2.new(1,38 -18 ,1, -(370 -284));v53.BackgroundColor3=Color3.fromRGB(47 -27 ,12 + 10 ,28);v53.BorderSizePixel=0 + 0 ;v53.Parent=v52;v54=Instance.new(v7("\11\22\218\254\44\49\252\227","\145\94\95\153"));v51=4 -2 ;end if (v51==7) then v60.Size=UDim2.new(1 + 0 , -(8 + 14),0 + 0 ,16);v60.Position=UDim2.new(1096 -(709 + 387) ,1874 -(673 + 1185) ,0 -0 ,134 -92 );v60.BackgroundTransparency=1;v60.Font=Enum.Font.SourceSans;v60.Text="作者: Taibao001  |  🐧群聊: 1038531272";v60.TextColor3=Color3.fromRGB(180,185,195);v60.TextSize=12;v51=12 -4 ;end if (v51==(5 + 1)) then v59.Font=Enum.Font.SourceSans;v59.Text="🌐 智能模式: 多接口实时翻译";v59.TextColor3=Color3.fromRGB(0 + 0 ,310 -80 ,180);v59.TextSize=12;v59.TextXAlignment=Enum.TextXAlignment.Left;v59.Parent=v53;v60=Instance.new(v7("\39\208\154\239\198\198\17\208\142","\167\115\181\226\155\138"));v51=2 + 5 ;end end end local function v28(v63) local v64=0;local v65;local v66;local v67;local v68;local v69;local v70;local v71;local v72;local v73;local v74;local v75;while true do if ((0 -0)==v64) then v65=Instance.new(v7("\247\200\1\193\88\248\143\209\194","\200\164\171\115\164\61\150"));v65.Name=v7("\138\245\10\71\130\177\192\6\86\151\187\230\52\64\143\189\251\14\64\164\171\253","\227\222\148\99\37");v65.ResetOnSpawn=false;v65.DisplayOrder=9999;if gethui then v65.Parent=gethui();elseif (syn and syn.protect_gui) then local v298=0 -0 ;local v299;while true do if ((1880 -(446 + 1434))==v298) then v299=1283 -(1040 + 243) ;while true do if (v299==(0 -0)) then syn.protect_gui(v65);v65.Parent=v10;break;end end break;end end else v65.Parent=v10;end v66=Instance.new(v7("\0\93\71\248\253","\153\83\50\50\150"));v64=1;end if (v64==(1850 -(559 + 1288))) then v68.CornerRadius=UDim.new(1931 -(609 + 1322) ,8);v68.Parent=v67;v69=Instance.new(v7("\248\206\46\239\8\194\236\24","\122\173\135\125\155"));v69.Thickness=2;v69.ApplyStrokeMode=Enum.ApplyStrokeMode.Border;v69.Parent=v67;v64=458 -(13 + 441) ;end if (v64==(33 -24)) then v75=v11:Create(v67,TweenInfo.new(0.4,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{[v7("\254\113\161\10\145\199\113\188","\229\174\30\210\99")]=UDim2.new(2 -1 , -(1369 -1094),1, -142)});v75:Play();task.delay(1 + 3 ,function() local v250=0 -0 ;local v251;local v252;while true do if (v250==(1 + 0)) then v11:Create(v69,v251,{[v7("\59\180\44\113\244\248\14\180\40\113\228\241","\136\111\198\77\31\135")]=1 + 0 }):Play();v11:Create(v70,v251,{[v7("\32\8\164\93\186\246\24\188\12\13\147\68\188\234\4\185\3\27\162\88\190\253","\201\98\105\199\54\221\132\119")]=2 -1 }):Play();v250=2 + 0 ;end if (v250==(3 -1)) then v11:Create(v72,v251,{[v7("\141\9\155\53\54\39\173\183\31\147\32\16\48\162\186\21","\204\217\108\227\65\98\85")]=1}):Play();v252=v11:Create(v73,v251,{[v7("\106\198\237\241\24\210\95\205\230\245\45\210\91\205\246\252","\160\62\163\149\133\76")]=1 + 0 });v250=3;end if (v250==(2 + 1)) then v252:Play();v252.Completed:Connect(function() if v74 then v74:Disconnect();end v65:Destroy();end);break;end if (v250==0) then v251=TweenInfo.new(0.4 + 0 ,Enum.EasingStyle.Quart,Enum.EasingDirection.In);v11:Create(v67,v251,{[v7("\43\226\149\88\249\52\54\21","\89\123\141\230\49\141\93")]=UDim2.new(1 + 0 ,20 + 0 ,434 -(153 + 280) , -(409 -267)),[v7("\209\112\245\7\23\88\252\100\248\8\36\88\242\127\229\28\17\88\246\127\245\21","\42\147\17\150\108\112")]=1 + 0 }):Play();v250=1 + 0 ;end end end);break;end if (v64==(2 + 0)) then v67.Size=UDim2.new(0,236 + 24 ,0,48);v67.Position=UDim2.new(1,20,1 + 0 , -(215 -73));v67.BackgroundColor3=Color3.fromRGB(24,13 + 7 ,703 -(89 + 578) );v67.BorderSizePixel=0 + 0 ;v67.Parent=v65;v68=Instance.new(v7("\4\40\241\187\234\222\184\35","\221\81\97\178\212\152\176"));v64=5 -2 ;end if (v64==(1050 -(572 + 477))) then v66.SoundId=v7("\79\116\107\29\96\184\72\73\127\119\70\60\228\25\11\39\33\79\36\249\25\15\46","\45\61\22\19\124\19\203");v66.Volume=1.2 + 0 ;v66.Parent=v65;v66:Play();v67=Instance.new(v7("\231\0\12\248\7","\217\161\114\109\149\98\16"));v67.Name=v7("\38\37\43\104\185\102\49\33\42\120","\20\114\64\88\28\220");v64=2 + 0 ;end if (v64==4) then v70=Instance.new(v7("\162\211\1\180\58","\168\228\161\96\217\95\81"));v70.Size=UDim2.new(0,1 + 3 ,87 -(84 + 2) , -12);v70.Position=UDim2.new(0,6,0 -0 ,5 + 1 );v70.BorderSizePixel=842 -(497 + 345) ;v70.Parent=v67;v71=Instance.new(v7("\238\248\13\83\61\89\222\195","\55\187\177\78\60\79"));v64=1 + 4 ;end if (v64==(2 + 5)) then v73=Instance.new(v7("\176\68\64\58\168\64\90\43\136","\78\228\33\56"));v73.Size=UDim2.new(1334 -(605 + 728) , -22,0 + 0 ,39 -21 );v73.Position=UDim2.new(0 + 0 ,59 -43 ,0,22 + 2 );v73.BackgroundTransparency=2 -1 ;v73.Font=Enum.Font.SourceSans;v73.Text="欢迎测试用户: @"   .. v63 ;v64=7 + 1 ;end if (v64==8) then v73.TextColor3=Color3.fromRGB(255,744 -(457 + 32) ,109 + 146 );v73.TextSize=1415 -(832 + 570) ;v73.TextXAlignment=Enum.TextXAlignment.Left;v73.Parent=v67;v74=nil;v74=v12.RenderStepped:Connect(function() local v253=0 + 0 ;local v254;local v255;while true do if (v253==1) then v69.Color=v255;v70.BackgroundColor3=v255;break;end if (v253==(0 + 0)) then v254=(tick()%(6 -4))/(1 + 1) ;v255=Color3.fromHSV(v254,796.8 -(588 + 208) ,2 -1 );v253=1801 -(884 + 916) ;end end end);v64=18 -9 ;end if (v64==(4 + 2)) then v72.Font=Enum.Font.SourceSansBold;v72.Text="🧪 测试用户";v72.TextColor3=Color3.fromRGB(908 -(232 + 421) ,2104 -(1569 + 320) ,0 + 0 );v72.TextSize=3 + 11 ;v72.TextXAlignment=Enum.TextXAlignment.Left;v72.Parent=v67;v64=7;end if (v64==5) then v71.CornerRadius=UDim.new(0 -0 ,609 -(316 + 289) );v71.Parent=v70;v72=Instance.new(v7("\25\203\71\255\106\206\130\40\194","\224\77\174\63\139\38\175"));v72.Size=UDim2.new(2 -1 , -22,0 + 0 ,1473 -(666 + 787) );v72.Position=UDim2.new(0,441 -(360 + 65) ,0 + 0 ,259 -(79 + 175) );v72.BackgroundTransparency=1 -0 ;v64=5 + 1 ;end end end local function v29(v76) local v77=0 -0 ;local v78;local v79;local v80;local v81;local v82;local v83;local v84;local v85;local v86;local v87;local v88;while true do if (v77==1) then if gethui then v78.Parent=gethui();elseif (syn and syn.protect_gui) then local v303=0 -0 ;while true do if (v303==0) then syn.protect_gui(v78);v78.Parent=v10;break;end end else v78.Parent=v10;end v79=Instance.new(v7("\11\9\24\227\60","\141\88\102\109"));v79.SoundId=v7("\161\81\210\113\9\46\80\213\186\87\144\63\85\107\13\152\230\3\146\34\74\109\3","\161\211\51\170\16\122\93\53");v79.Volume=1.3;v77=901 -(503 + 396) ;end if (v77==9) then v85.Font=Enum.Font.SourceSansBold;v85.Text="👑 开发者";v85.TextColor3=Color3.fromRGB(436 -(92 + 89) ,164 -79 ,131 + 124 );v85.TextSize=9 + 5 ;v77=39 -29 ;end if (v77==4) then v80.Parent=v78;v81=Instance.new(v7("\109\62\4\73\74\25\34\84","\38\56\119\71"));v81.CornerRadius=UDim.new(0,8);v81.Parent=v80;v77=5;end if (v77==3) then v80.Size=UDim2.new(0 + 0 ,260,0,109 -61 );v80.Position=UDim2.new(1 + 0 ,20,1 + 0 , -142);v80.BackgroundColor3=Color3.fromRGB(106 -71 ,15,6 + 39 );v80.BorderSizePixel=0;v77=4;end if (v77==(8 -2)) then v83=Instance.new(v7("\240\147\254\68\218","\191\182\225\159\41"));v83.Size=UDim2.new(1244 -(485 + 759) ,8 -4 ,1190 -(442 + 747) , -(1147 -(832 + 303)));v83.Position=UDim2.new(0,952 -(88 + 858) ,0,2 + 4 );v83.BorderSizePixel=0 + 0 ;v77=1 + 6 ;end if ((794 -(766 + 23))==v77) then v82=Instance.new(v7("\198\198\107\194\55\89\248\234","\54\147\143\56\182\69"));v82.Thickness=9 -7 ;v82.ApplyStrokeMode=Enum.ApplyStrokeMode.Border;v82.Parent=v80;v77=7 -1 ;end if (v77==(4 -2)) then v79.Parent=v78;v79:Play();v80=Instance.new(v7("\221\188\179\37\254","\72\155\206\210"));v80.Name=v7("\98\127\66\45\50\84\126","\83\38\26\52\110");v77=10 -7 ;end if (v77==(1080 -(1036 + 37))) then v83.Parent=v80;v84=Instance.new(v7("\30\59\11\90\153\137\199\57","\162\75\114\72\53\235\231"));v84.CornerRadius=UDim.new(0 + 0 ,7 -3 );v84.Parent=v83;v77=7 + 1 ;end if ((1494 -(641 + 839))==v77) then task.delay(917 -(910 + 3) ,function() local v256=0 -0 ;local v257;local v258;local v259;while true do if ((1684 -(1466 + 218))==v256) then v257=0 + 0 ;v258=nil;v256=1;end if (v256==(1149 -(556 + 592))) then v259=nil;while true do if (v257==2) then v11:Create(v85,v258,{[v7("\179\241\28\50\150\149\245\10\53\178\134\230\1\40\161\158","\194\231\148\100\70")]=1}):Play();v259=v11:Create(v86,v258,{[v7("\114\73\217\183\194\218\71\66\210\179\247\218\67\66\194\186","\168\38\44\161\195\150")]=1 + 0 });v257=811 -(329 + 479) ;end if (v257==(857 -(174 + 680))) then v259:Play();v259.Completed:Connect(function() local v315=0;local v316;while true do if (v315==(0 -0)) then v316=0 -0 ;while true do if (v316==(0 + 0)) then if v87 then v87:Disconnect();end v78:Destroy();break;end end break;end end end);break;end if (v257==(739 -(396 + 343))) then v258=TweenInfo.new(0.4 + 0 ,Enum.EasingStyle.Quart,Enum.EasingDirection.In);v11:Create(v80,v258,{[v7("\54\16\65\206\184\123\132\8","\235\102\127\50\167\204\18")]=UDim2.new(1478 -(29 + 1448) ,20,1390 -(135 + 1254) , -(534 -392)),[v7("\114\160\246\40\67\60\95\180\251\39\112\60\81\175\230\51\69\60\85\175\246\58","\78\48\193\149\67\36")]=4 -3 }):Play();v257=1 + 0 ;end if (v257==(1528 -(389 + 1138))) then v11:Create(v82,v258,{[v7("\4\12\129\22\82\32\31\146\29\79\51\7","\33\80\126\224\120")]=1}):Play();v11:Create(v83,v258,{[v7("\206\169\0\207\91\254\167\22\202\88\216\186\2\202\79\252\169\17\193\82\239\177","\60\140\200\99\164")]=575 -(102 + 472) }):Play();v257=2 + 0 ;end end break;end end end);break;end if (v77==(0 + 0)) then v78=Instance.new(v7("\229\163\31\42\198\216\135\24\38","\163\182\192\109\79"));v78.Name=v7("\0\39\9\194\244\59\2\5\214\194\49\42\3\207\248\49\1\21\201","\149\84\70\96\160");v78.ResetOnSpawn=false;v78.DisplayOrder=9324 + 675 ;v77=1;end if (v77==8) then v85=Instance.new(v7("\184\57\92\246\127\3\142\57\72","\98\236\92\36\130\51"));v85.Size=UDim2.new(1546 -(320 + 1225) , -(38 -16),0 + 0 ,1484 -(157 + 1307) );v85.Position=UDim2.new(1859 -(821 + 1038) ,39 -23 ,0 + 0 ,8 -3 );v85.BackgroundTransparency=1;v77=4 + 5 ;end if (v77==(27 -16)) then v86.Position=UDim2.new(0,1042 -(834 + 192) ,0,24);v86.BackgroundTransparency=1 + 0 ;v86.Font=Enum.Font.SourceSans;v86.Text="欢迎开发者: @"   .. v76 ;v77=12;end if (v77==12) then v86.TextColor3=Color3.fromRGB(66 + 189 ,6 + 249 ,395 -140 );v86.TextSize=317 -(300 + 4) ;v86.TextXAlignment=Enum.TextXAlignment.Left;v86.Parent=v80;v77=4 + 9 ;end if (v77==(33 -20)) then v87=nil;v87=v12.RenderStepped:Connect(function() local v260=362 -(112 + 250) ;local v261;local v262;local v263;while true do if (0==v260) then v261=0;v262=nil;v260=1 + 0 ;end if (v260==(2 -1)) then v263=nil;while true do if (v261==0) then local v310=0 + 0 ;while true do if (v310==(1 + 0)) then v261=1 + 0 ;break;end if (v310==(0 + 0)) then v262=(tick()%(2 + 0))/2 ;v263=Color3.fromHSV(v262,1414.9 -(1001 + 413) ,2 -1 );v310=883 -(244 + 638) ;end end end if ((694 -(627 + 66))==v261) then v82.Color=v263;v83.BackgroundColor3=v263;break;end end break;end end end);v88=v11:Create(v80,TweenInfo.new(0.4,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{[v7("\48\124\17\118\95\7\133\14","\234\96\19\98\31\43\110")]=UDim2.new(2 -1 , -(877 -(512 + 90)),1, -(2048 -(1665 + 241)))});v88:Play();v77=731 -(373 + 344) ;end if (v77==(5 + 5)) then v85.TextXAlignment=Enum.TextXAlignment.Left;v85.Parent=v80;v86=Instance.new(v7("\144\28\20\174\105\169\183\53\168","\80\196\121\108\218\37\200\213"));v86.Size=UDim2.new(1, -22,0,18);v77=11;end end end print("[Taibao Script] 脚本启动成功");v26();task.spawn(function() local v89=0 + 0 ;local v90;while true do if (v89==(2 -1)) then v27( not v90);if v15[v13.Name] then v29(v13.Name);elseif v16[v13.Name] then v28(v13.Name);end break;end if (v89==0) then task.wait(0.2 -0 );v90=v15[v13.Name] or v16[v13.Name] ;v89=1;end end end);
+-----------------------------------------------------------
+-- 🎯 [用户身份配置表 - 在这里修改你的用户名]
+-----------------------------------------------------------
+local AllowedDevelopers = {
+    ["tgjsz78"] = true,  -- 👈 把这里的名字改成你的 Roblox 用户名！
+}
+
+local AllowedTesterUsers = {
+    ["YC1232870"] = true,
+    ["no"] = true,
+}
+
+-----------------------------------------------------------
+-- 📚 [翻译缓存与过滤]
+-----------------------------------------------------------
+local TranslationCache = {}
+
+local function shouldSkipText(text)
+    if not text or type(text) ~= "string" or text:match("^%s*$") then return true end
+    local trimmed = text:match("^%s*(.-)%s*$")
+    
+    local lower = trimmed:lower()
+    if lower == "label" or lower == "textlabel" or lower == "button" or lower == "text" or lower == "frame" then
+        return true
+    end
+
+    if #trimmed <= 1 or tonumber(trimmed) then return true end
+    if trimmed:match("^%$?%d+[kKmMbB%d%,%.%s]*$") or trimmed:match("^https?://") or trimmed:match("discord%.gg") then return true end
+    return false
+end
+
+-----------------------------------------------------------
+-- 🌐 [极速单通道翻译引擎 (Google)]
+-----------------------------------------------------------
+local function httpRequest(url)
+    if request then return request({Url = url, Method = "GET"}).Body
+    elseif http_request then return http_request({Url = url, Method = "GET"}).Body
+    elseif syn and syn.request then return syn.request({Url = url, Method = "GET"}).Body
+    else return game:HttpGet(url) end
+end
+
+local function translateFree(text)
+    local encodedText = HttpService:UrlEncode(text)
+    local url = string.format("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=%s", encodedText)
+    
+    local success, response = pcall(function() return httpRequest(url) end)
+    if success and response and #response > 0 then
+        local decodedSuccess, decoded = pcall(function() return HttpService:JSONDecode(response) end)
+        if decodedSuccess and decoded and decoded[1] then
+            local translated = ""
+            for _, item in ipairs(decoded[1]) do
+                if item[1] then translated = translated .. item[1] end
+            end
+            if translated ~= "" then return translated end
+        end
+    end
+    return text
+end
+
+local function translateSmart(text)
+    local trimmed = text:match("^%s*(.-)%s*$")
+    if shouldSkipText(trimmed) then return text end
+    if TranslationCache[trimmed] then return TranslationCache[trimmed] end
+
+    local translatedResult = translateFree(trimmed)
+    if translatedResult and translatedResult ~= "" and translatedResult ~= trimmed then
+        TranslationCache[trimmed] = translatedResult
+        return translatedResult
+    end
+    return text
+end
+
+-----------------------------------------------------------
+-- 🔍 [防卡顿动态 UI 监听与绑定]
+-----------------------------------------------------------
+local function processSingleUI(element)
+    if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
+        if element.Text and #element.Text > 0 then
+            task.spawn(function()
+                local trans = translateSmart(element.Text)
+                if element and element.Parent and trans ~= element.Text then 
+                    element.Text = trans 
+                end
+            end)
+        end
+
+        local lastTick = 0
+        element:GetPropertyChangedSignal("Text"):Connect(function()
+            local currentTick = tick()
+            if currentTick - lastTick < 0.5 then return end -- 0.5秒防抖限制，防止频繁改动导致卡顿
+            lastTick = currentTick
+
+            if not TranslationCache[element.Text] and not shouldSkipText(element.Text) then
+                task.spawn(function()
+                    local trans = translateSmart(element.Text)
+                    if element and element.Parent then element.Text = trans end
+                end)
+            end
+        end)
+    end
+end
+
+local function startScan()
+    task.spawn(function()
+        local count = 0
+        for _, obj in ipairs(PlayerGui:GetDescendants()) do
+            processSingleUI(obj)
+            count = count + 1
+            if count % 50 == 0 then
+                task.wait(0.05) -- 分帧处理，防止瞬间卡死
+            end
+        end
+        
+        PlayerGui.DescendantAdded:Connect(processSingleUI)
+    end)
+end
+
+-----------------------------------------------------------
+-- 🎨 [通用脚本作者信息弹窗]
+-----------------------------------------------------------
+local function showAuthorNotification(playSound)
+    local notifyGui = Instance.new("ScreenGui")
+    notifyGui.Name = "TaibaoNotifyGui"
+    notifyGui.ResetOnSpawn = false
+    notifyGui.DisplayOrder = 9999
+    
+    if gethui then notifyGui.Parent = gethui()
+    elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
+    else notifyGui.Parent = CoreGui end
+
+    if playSound ~= false then
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://602698205"
+        sound.Volume = 1
+        sound.Parent = notifyGui
+        sound:Play()
+    end
+
+    local cardFrame = Instance.new("Frame")
+    cardFrame.Name = "NotifyCard"
+    cardFrame.Size = UDim2.new(0, 260, 0, 66)
+    cardFrame.Position = UDim2.new(1, 20, 1, -86)
+    cardFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
+    cardFrame.BorderSizePixel = 0
+    cardFrame.Parent = notifyGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = cardFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = cardFrame
+
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 4, 1, -12)
+    accentBar.Position = UDim2.new(0, 6, 0, 6)
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = cardFrame
+
+    local barCorner = Instance.new("UICorner")
+    barCorner.CornerRadius = UDim.new(0, 4)
+    barCorner.Parent = accentBar
+
+    local topLabel = Instance.new("TextLabel")
+    topLabel.Size = UDim2.new(1, -22, 0, 18)
+    topLabel.Position = UDim2.new(0, 16, 0, 5)
+    topLabel.BackgroundTransparency = 1
+    topLabel.Font = Enum.Font.SourceSansBold
+    topLabel.Text = "✨ 界面自动汉化已就绪"
+    topLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    topLabel.TextSize = 14
+    topLabel.TextXAlignment = Enum.TextXAlignment.Left
+    topLabel.Parent = cardFrame
+
+    local midLabel = Instance.new("TextLabel")
+    midLabel.Size = UDim2.new(1, -22, 0, 16)
+    midLabel.Position = UDim2.new(0, 16, 0, 24)
+    midLabel.BackgroundTransparency = 1
+    midLabel.Font = Enum.Font.SourceSans
+    midLabel.Text = "🌐 智能模式: 单通道实时翻译"
+    midLabel.TextColor3 = Color3.fromRGB(0, 230, 180)
+    midLabel.TextSize = 12
+    midLabel.TextXAlignment = Enum.TextXAlignment.Left
+    midLabel.Parent = cardFrame
+
+    local bottomLabel = Instance.new("TextLabel")
+    bottomLabel.Size = UDim2.new(1, -22, 0, 16)
+    bottomLabel.Position = UDim2.new(0, 16, 0, 42)
+    bottomLabel.BackgroundTransparency = 1
+    bottomLabel.Font = Enum.Font.SourceSans
+    bottomLabel.Text = "作者: Taibao001  |  🐧群聊: 1038531272"
+    bottomLabel.TextColor3 = Color3.fromRGB(180, 185, 195)
+    bottomLabel.TextSize = 12
+    bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
+    bottomLabel.Parent = cardFrame
+
+    local rainbowConnection
+    rainbowConnection = RunService.RenderStepped:Connect(function()
+        local hue = (tick() % 2) / 2
+        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
+        stroke.Color = rainbowColor
+        accentBar.BackgroundColor3 = rainbowColor
+    end)
+
+    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -86)})
+    tweenIn:Play()
+
+    task.delay(2.8, function()
+        local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -86), BackgroundTransparency = 1}):Play()
+        TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
+        TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
+        TweenService:Create(topLabel, tweenInfoOut, {TextTransparency = 1}):Play()
+        TweenService:Create(midLabel, tweenInfoOut, {TextTransparency = 1}):Play()
+        local tweenOut = TweenService:Create(bottomLabel, tweenInfoOut, {TextTransparency = 1})
+        tweenOut:Play()
+
+        tweenOut.Completed:Connect(function()
+            if rainbowConnection then rainbowConnection:Disconnect() end
+            notifyGui:Destroy()
+        end)
+    end)
+end
+
+-----------------------------------------------------------
+-- 🧪 [测试用户欢迎弹窗]
+-----------------------------------------------------------
+local function showTesterWelcomeNotification(username)
+    local notifyGui = Instance.new("ScreenGui")
+    notifyGui.Name = "TaibaoTesterWelcomeGui"
+    notifyGui.ResetOnSpawn = false
+    notifyGui.DisplayOrder = 9999
+    
+    if gethui then notifyGui.Parent = gethui()
+    elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
+    else notifyGui.Parent = CoreGui end
+
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://4612372428"
+    sound.Volume = 1.2
+    sound.Parent = notifyGui
+    sound:Play()
+
+    local cardFrame = Instance.new("Frame")
+    cardFrame.Name = "TesterCard"
+    cardFrame.Size = UDim2.new(0, 260, 0, 48)
+    cardFrame.Position = UDim2.new(1, 20, 1, -142)
+    cardFrame.BackgroundColor3 = Color3.fromRGB(24, 20, 36)
+    cardFrame.BorderSizePixel = 0
+    cardFrame.Parent = notifyGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = cardFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = cardFrame
+
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 4, 1, -12)
+    accentBar.Position = UDim2.new(0, 6, 0, 6)
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = cardFrame
+
+    local barCorner = Instance.new("UICorner")
+    barCorner.CornerRadius = UDim.new(0, 4)
+    barCorner.Parent = accentBar
+
+    local topLabel = Instance.new("TextLabel")
+    topLabel.Size = UDim2.new(1, -22, 0, 20)
+    topLabel.Position = UDim2.new(0, 16, 0, 5)
+    topLabel.BackgroundTransparency = 1
+    topLabel.Font = Enum.Font.SourceSansBold
+    topLabel.Text = "🧪 测试用户"
+    topLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+    topLabel.TextSize = 14
+    topLabel.TextXAlignment = Enum.TextXAlignment.Left
+    topLabel.Parent = cardFrame
+
+    local bottomLabel = Instance.new("TextLabel")
+    bottomLabel.Size = UDim2.new(1, -22, 0, 18)
+    bottomLabel.Position = UDim2.new(0, 16, 0, 24)
+    bottomLabel.BackgroundTransparency = 1
+    bottomLabel.Font = Enum.Font.SourceSans
+    bottomLabel.Text = "欢迎测试用户: @" .. username
+    bottomLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    bottomLabel.TextSize = 13
+    bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
+    bottomLabel.Parent = cardFrame
+
+    local rainbowConnection
+    rainbowConnection = RunService.RenderStepped:Connect(function()
+        local hue = (tick() % 2) / 2
+        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
+        stroke.Color = rainbowColor
+        accentBar.BackgroundColor3 = rainbowColor
+    end)
+
+    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -142)})
+    tweenIn:Play()
+
+    task.delay(4, function()
+        local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -142), BackgroundTransparency = 1}):Play()
+        TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
+        TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
+        TweenService:Create(topLabel, tweenInfoOut, {TextTransparency = 1}):Play()
+        local tweenOut = TweenService:Create(bottomLabel, tweenInfoOut, {TextTransparency = 1})
+        tweenOut:Play()
+
+        tweenOut.Completed:Connect(function()
+            if rainbowConnection then rainbowConnection:Disconnect() end
+            notifyGui:Destroy()
+        end)
+    end)
+end
+
+-----------------------------------------------------------
+-- 👑 [开发者欢迎弹窗]
+-----------------------------------------------------------
+local function showDeveloperWelcomeNotification(username)
+    local notifyGui = Instance.new("ScreenGui")
+    notifyGui.Name = "TaibaoDevWelcomeGui"
+    notifyGui.ResetOnSpawn = false
+    notifyGui.DisplayOrder = 9999
+    
+    if gethui then notifyGui.Parent = gethui()
+    elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
+    else notifyGui.Parent = CoreGui end
+
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://6895082006"
+    sound.Volume = 1.3
+    sound.Parent = notifyGui
+    sound:Play()
+
+    local cardFrame = Instance.new("Frame")
+    cardFrame.Name = "DevCard"
+    cardFrame.Size = UDim2.new(0, 260, 0, 48)
+    cardFrame.Position = UDim2.new(1, 20, 1, -142)
+    cardFrame.BackgroundColor3 = Color3.fromRGB(35, 15, 45)
+    cardFrame.BorderSizePixel = 0
+    cardFrame.Parent = notifyGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = cardFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = cardFrame
+
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 4, 1, -12)
+    accentBar.Position = UDim2.new(0, 6, 0, 6)
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = cardFrame
+
+    local barCorner = Instance.new("UICorner")
+    barCorner.CornerRadius = UDim.new(0, 4)
+    barCorner.Parent = accentBar
+
+    local topLabel = Instance.new("TextLabel")
+    topLabel.Size = UDim2.new(1, -22, 0, 20)
+    topLabel.Position = UDim2.new(0, 16, 0, 5)
+    topLabel.BackgroundTransparency = 1
+    topLabel.Font = Enum.Font.SourceSansBold
+    topLabel.Text = "👑 开发者"
+    topLabel.TextColor3 = Color3.fromRGB(255, 85, 255)
+    topLabel.TextSize = 14
+    topLabel.TextXAlignment = Enum.TextXAlignment.Left
+    topLabel.Parent = cardFrame
+
+    local bottomLabel = Instance.new("TextLabel")
+    bottomLabel.Size = UDim2.new(1, -22, 0, 18)
+    bottomLabel.Position = UDim2.new(0, 16, 0, 24)
+    bottomLabel.BackgroundTransparency = 1
+    bottomLabel.Font = Enum.Font.SourceSans
+    bottomLabel.Text = "欢迎开发者: @" .. username
+    bottomLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    bottomLabel.TextSize = 13
+    bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
+    bottomLabel.Parent = cardFrame
+
+    local rainbowConnection
+    rainbowConnection = RunService.RenderStepped:Connect(function()
+        local hue = (tick() % 2) / 2
+        local rainbowColor = Color3.fromHSV(hue, 0.9, 1)
+        stroke.Color = rainbowColor
+        accentBar.BackgroundColor3 = rainbowColor
+    end)
+
+    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -142)})
+    tweenIn:Play()
+
+    task.delay(4, function()
+        local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -142), BackgroundTransparency = 1}):Play()
+        TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
+        TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
+        TweenService:Create(topLabel, tweenInfoOut, {TextTransparency = 1}):Play()
+        local tweenOut = TweenService:Create(bottomLabel, tweenInfoOut, {TextTransparency = 1})
+        tweenOut:Play()
+
+        tweenOut.Completed:Connect(function()
+            if rainbowConnection then rainbowConnection:Disconnect() end
+            notifyGui:Destroy()
+        end)
+    end)
+end
+
+-----------------------------------------------------------
+-- 🚀 [启动逻辑]
+-----------------------------------------------------------
+print("[Taibao Script] 轻量汉化脚本启动成功")
+startScan()
+
+task.spawn(function()
+    task.wait(0.2)
+    
+    local isSpecialUser = AllowedDevelopers[LocalPlayer.Name] or AllowedTesterUsers[LocalPlayer.Name]
+
+    showAuthorNotification(not isSpecialUser)
+
+    if AllowedDevelopers[LocalPlayer.Name] then
+        showDeveloperWelcomeNotification(LocalPlayer.Name)
+    elseif AllowedTesterUsers[LocalPlayer.Name] then
+        showTesterWelcomeNotification(LocalPlayer.Name)
+    end
+end)
