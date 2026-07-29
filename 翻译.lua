@@ -1,9 +1,9 @@
 --[=[
-    Roblox 全动态 API 智能汉化脚本
+    Roblox Google 免费 API 全动态汉化脚本
     功能：
-    1. 移除本地词典，通过外部翻译 API 实现全自动智能汉化。
-    2. 内置翻译缓存（Cache），避免对相同文本重复发起网络请求，极大地提升性能并防止 API 封禁。
-    3. 实时监听动态生成的 UI (`DescendantAdded`) 与文本变动 (`GetPropertyChangedSignal`)。
+    1. 对接 Google 翻译免费公开 API 接口，实现全自动动态汉化。
+    2. 内置 Cache 缓存系统，防止相同文本重复请求 API，极大地提升运行速度。
+    3. 支持动态 UI 捕获（DescendantAdded）与文本修改监听（GetPropertyChangedSignal）。
 ]=]
 
 local Players = game:GetService("Players")
@@ -14,36 +14,42 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ==================== 1. 配置区域 = ====================
 local CONFIG = {
-    TargetLanguage = "zh", -- 目标语言：简体中文
-    DebugMode = true,      -- 是否开启控制台日志
-    -- 使用支持 Roblox 跨域或公共免费的翻译接口（例如 MyMemory API 或自建代理 API）
-    -- 提示：部分 Executor 的 http_request 可能需要根据实际情况调整请求头
+    TargetLang = "zh-CN", -- 目标语言：简体中文
+    SourceLang = "en",    -- 源语言：英文
+    DebugMode = true,     -- 是否打印翻译日志
 }
 
--- 翻译缓存表：防止相同文本重复请求 API，大幅节省性能
+-- 翻译缓存表（避免相同文本重复消耗 API 请求）
 local TranslationCache = {}
--- 正在请求中的文本队列，防止并发重复请求
+-- 正在请求中的队列（防止短时间内对同一文本发起多次网络请求）
 local PendingRequests = {}
 
--- ==================== 2. API 请求函数 = ====================
-local function RequestApiTranslation(text)
+-- ==================== 2. Google 免费 API 请求核心 = ====================
+local function GoogleTranslate(text)
     if not text or text == "" then return nil end
     
-    -- 检查缓存
+    -- 清理前后空格
+    text = text:gsub("^%s*(.-)%s*$", "%1")
+    
+    -- 命中缓存直接返回
     if TranslationCache[text] then
         return TranslationCache[text]
     end
     
     if PendingRequests[text] then
-        return nil -- 正在请求中，跳过本次
+        return nil
     end
     
     PendingRequests[text] = true
 
-    -- 这里以 MyMemory 免费公开翻译 API 为例（无需 Key，适合基础汉化）
-    -- 如果您有自己的高级翻译 API（如 DeepL / Google Cloud API），可以在这里替换 URL 和解析方式
+    -- 构造 Google 翻译公开 API 请求链接
     local encodedText = HttpService:UrlEncode(text)
-    local url = string.format("https://api.mymemory.translated.net/get?q=%s&langpair=en|zh", encodedText)
+    local url = string.format(
+        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dt=t&q=%s",
+        CONFIG.SourceLang,
+        CONFIG.TargetLang,
+        encodedText
+    )
 
     local success, response = pcall(function()
         local req = (syn and syn.request) or (http and http.request) or http_request or request
@@ -55,9 +61,18 @@ local function RequestApiTranslation(text)
         })
         
         if res and res.StatusCode == 200 then
+            -- 解析 Google 返回的嵌套 JSON 数组格式
             local data = HttpService:JSONDecode(res.Body)
-            if data and data.responseData and data.responseData.translatedText then
-                return data.responseData.translatedText
+            if data and data[1] then
+                local translatedString = ""
+                for _, chunk in ipairs(data[1]) do
+                    if chunk[1] then
+                        translatedString = translatedString .. chunk[1]
+                    end
+                end
+                if translatedString ~= "" then
+                    return translatedString
+                end
             end
         end
     end)
@@ -65,10 +80,6 @@ local function RequestApiTranslation(text)
     PendingRequests[text] = nil
 
     if success and response then
-        -- 过滤掉 API 报错或未翻译的情况
-        if response:sub(1, 7) == "MYMEMORY" or response == text then
-            return nil
-        end
         TranslationCache[text] = response
         return response
     end
@@ -76,7 +87,7 @@ local function RequestApiTranslation(text)
     return nil
 end
 
--- ==================== 3. 异步处理 UI 翻译 = ====================
+-- ==================== 3. 异步处理 UI 元素 = ====================
 local function ProcessElement(element)
     if not element:IsA("TextLabel") and not element:IsA("TextButton") and not element:IsA("TextBox") then
         return
@@ -86,22 +97,22 @@ local function ProcessElement(element)
     local originalText = element.Text
     if originalText and originalText ~= "" and not originalText:match("^%s*$") then
         task.spawn(function()
-            local translated = RequestApiTranslation(originalText)
+            local translated = GoogleTranslate(originalText)
             if translated and element.Parent then
                 if CONFIG.DebugMode then
-                    print(string.("[API Localization] '%s' -> '%s'"):format(originalText, translated))
+                    print(string.("[Google Translate] '%s' -> '%s'"):format(originalText, translated))
                 end
                 element.Text = translated
             end
         end)
     end
     
-    -- 处理输入框占位符文本 (PlaceholderText)
+    -- 处理输入框占位符 (PlaceholderText)
     if element:IsA("TextBox") then
         local originalPlaceholder = element.PlaceholderText
         if originalPlaceholder and originalPlaceholder ~= "" then
             task.spawn(function()
-                local translated = RequestApiTranslation(originalPlaceholder)
+                local translated = GoogleTranslate(originalPlaceholder)
                 if translated and element.Parent then
                     element.PlaceholderText = translated
                 end
@@ -109,12 +120,12 @@ local function ProcessElement(element)
         end
     end
     
-    -- 监听文本后续修改
+    -- 实时监听第三方脚本后续对文本的修改
     element:GetPropertyChangedSignal("Text"):Connect(function()
         local currentText = element.Text
         if currentText and currentText ~= "" and not TranslationCache[currentText] then
             task.spawn(function()
-                local translated = RequestApiTranslation(currentText)
+                local translated = GoogleTranslate(currentText)
                 if translated and element.Parent and element.Text == currentText then
                     element.Text = translated
                 end
@@ -123,22 +134,23 @@ local function ProcessElement(element)
     end)
 end
 
--- ==================== 4. 容器扫描与监听 = ====================
+-- ==================== 4. 遍历与动态监听容器 = ====================
 local function ScanContainer(container)
     for _, descendant in ipairs(container:GetDescendants()) do
         ProcessElement(descendant)
     end
     
+    -- 动态捕获后面才生成的 UI 菜单
     container.DescendantAdded:Connect(function(descendant)
         ProcessElement(descendant)
     end)
 end
 
--- ==================== 5. 启动程序 = ====================
+-- ==================== 5. 启动脚本 = ====================
 task.spawn(function()
     ScanContainer(PlayerGui)
     pcall(function()
         ScanContainer(CoreGui)
     end)
-    print("[API Localization] 全动态 API 汉化脚本已成功启动！")
+    print("[Google Translate] 动态汉化引擎已成功启动！")
 end)
