@@ -1,264 +1,144 @@
--- ========================================================
--- Roblox 实时智能排队汉化版 (不卡顿 · 实时 API 翻译)
--- 作者: 𝕿𝖆𝖎𝖇𝖆𝖔𝟎𝟎𝟏  |  🐧群聊: 1038531272
--- ========================================================
+--[=[
+    Roblox 全动态 API 智能汉化脚本
+    功能：
+    1. 移除本地词典，通过外部翻译 API 实现全自动智能汉化。
+    2. 内置翻译缓存（Cache），避免对相同文本重复发起网络请求，极大地提升性能并防止 API 封禁。
+    3. 实时监听动态生成的 UI (`DescendantAdded`) 与文本变动 (`GetPropertyChangedSignal`)。
+]=]
 
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
------------------------------------------------------------
--- 🎯 [用户身份配置表]
------------------------------------------------------------
-local AllowedDevelopers = {
-    ["tgjsz78"] = true,
+-- ==================== 1. 配置区域 = ====================
+local CONFIG = {
+    TargetLanguage = "zh", -- 目标语言：简体中文
+    DebugMode = true,      -- 是否开启控制台日志
+    -- 使用支持 Roblox 跨域或公共免费的翻译接口（例如 MyMemory API 或自建代理 API）
+    -- 提示：部分 Executor 的 http_request 可能需要根据实际情况调整请求头
 }
 
-local AllowedTesterUsers = {
-    ["YC1232870"] = true,
-    ["no"] = true,
-}
-
------------------------------------------------------------
--- 🌐 [智能排队与缓存网络翻译引擎 (解决卡顿与并发)]
------------------------------------------------------------
+-- 翻译缓存表：防止相同文本重复请求 API，大幅节省性能
 local TranslationCache = {}
-local TranslationQueue = {}
-local IsProcessingQueue = false
+-- 正在请求中的文本队列，防止并发重复请求
+local PendingRequests = {}
 
-local function httpRequest(url)
-    if request then return request({Url = url, Method = "GET"}).Body
-    elseif http_request then return http_request({Url = url, Method = "GET"}).Body
-    elseif syn and syn.request then return syn.request({Url = url, Method = "GET"}).Body
-    else return game:HttpGet(url) end
-end
-
-local function fetchGoogleTranslate(text)
-    local encodedText = HttpService:UrlEncode(text)
-    local url = string.format("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=%s", encodedText)
+-- ==================== 2. API 请求函数 = ====================
+local function RequestApiTranslation(text)
+    if not text or text == "" then return nil end
     
-    local success, response = pcall(function() return httpRequest(url) end)
-    if success and response and #response > 0 then
-        local decodedSuccess, decoded = pcall(function() return HttpService:JSONDecode(response) end)
-        if decodedSuccess and decoded and decoded[1] then
-            local translated = ""
-            for _, item in ipairs(decoded[1]) do
-                if item[1] then translated = translated .. item[1] end
-            end
-            if translated ~= "" then return translated end
-        end
+    -- 检查缓存
+    if TranslationCache[text] then
+        return TranslationCache[text]
     end
-    return text
-end
-
--- 队列消费者：每隔 0.15 秒发送一个请求，绝对不卡主线程，也不会被接口限制
-local function processQueue()
-    if IsProcessingQueue then return end
-    IsProcessingQueue = true
     
-    task.spawn(function()
-        while #TranslationQueue > 0 do
-            local item = table.remove(TranslationQueue, 1)
-            local text = item.text
-            local callback = item.callback
-            
-            if TranslationCache[text] then
-                callback(TranslationCache[text])
-            else
-                local result = fetchGoogleTranslate(text)
-                if result and result ~= "" then
-                    TranslationCache[text] = result
-                    callback(result)
-                else
-                    callback(text)
-                end
-                -- 控制请求节奏，防卡顿防封禁
-                task.wait(0.12)
+    if PendingRequests[text] then
+        return nil -- 正在请求中，跳过本次
+    end
+    
+    PendingRequests[text] = true
+
+    -- 这里以 MyMemory 免费公开翻译 API 为例（无需 Key，适合基础汉化）
+    -- 如果您有自己的高级翻译 API（如 DeepL / Google Cloud API），可以在这里替换 URL 和解析方式
+    local encodedText = HttpService:UrlEncode(text)
+    local url = string.format("https://api.mymemory.translated.net/get?q=%s&langpair=en|zh", encodedText)
+
+    local success, response = pcall(function()
+        local req = (syn and syn.request) or (http and http.request) or http_request or request
+        if not req then return nil end
+        
+        local res = req({
+            Url = url,
+            Method = "GET"
+        })
+        
+        if res and res.StatusCode == 200 then
+            local data = HttpService:JSONDecode(res.Body)
+            if data and data.responseData and data.responseData.translatedText then
+                return data.responseData.translatedText
             end
         end
-        IsProcessingQueue = false
     end)
+
+    PendingRequests[text] = nil
+
+    if success and response then
+        -- 过滤掉 API 报错或未翻译的情况
+        if response:sub(1, 7) == "MYMEMORY" or response == text then
+            return nil
+        end
+        TranslationCache[text] = response
+        return response
+    end
+
+    return nil
 end
 
-local function queueTranslate(text, callback)
-    if not text or type(text) ~= "string" or text:match("^%s*$") then return end
-    local trimmed = text:match("^%s*(.-)%s*$")
-    
-    -- 纯数字或链接不送去翻译
-    if tonumber(trimmed) or trimmed:match("^https?://") or trimmed:match("discord%.gg") then return end
-    
-    if TranslationCache[trimmed] then
-        callback(TranslationCache[trimmed])
+-- ==================== 3. 异步处理 UI 翻译 = ====================
+local function ProcessElement(element)
+    if not element:IsA("TextLabel") and not element:IsA("TextButton") and not element:IsA("TextBox") then
         return
     end
     
-    table.insert(TranslationQueue, {text = trimmed, callback = callback})
-    processQueue()
-end
-
------------------------------------------------------------
--- 🔍 [UI 动态绑定与安全过滤]
------------------------------------------------------------
-local function processSingleUI(element)
-    if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
-        if element.Text and #element.Text > 0 then
-            queueTranslate(element.Text, function(trans)
-                if element and element.Parent and trans ~= element.Text then
-                    element.Text = trans
+    -- 处理主文本 (Text)
+    local originalText = element.Text
+    if originalText and originalText ~= "" and not originalText:match("^%s*$") then
+        task.spawn(function()
+            local translated = RequestApiTranslation(originalText)
+            if translated and element.Parent then
+                if CONFIG.DebugMode then
+                    print(string.("[API Localization] '%s' -> '%s'"):format(originalText, translated))
                 end
-            end)
-        end
-
-        element:GetPropertyChangedSignal("Text"):Connect(function()
-            if element.Text and #element.Text > 0 then
-                queueTranslate(element.Text, function(trans)
-                    if element and element.Parent and trans ~= element.Text then
-                        element.Text = trans
-                    end
-                end)
+                element.Text = translated
             end
         end)
     end
-end
-
-local function startScan()
-    task.spawn(function()
-        local containers = {PlayerGui}
-        if CoreGui then table.insert(containers, CoreGui) end
-        if gethui then pcall(function() table.insert(containers, gethui()) end) end
-        if get_hidden_gui then pcall(function() table.insert(containers, get_hidden_gui()) end) end
-
-        for _, container in ipairs(containers) do
-            pcall(function()
-                for _, obj in ipairs(container:GetDescendants()) do
-                    processSingleUI(obj)
+    
+    -- 处理输入框占位符文本 (PlaceholderText)
+    if element:IsA("TextBox") then
+        local originalPlaceholder = element.PlaceholderText
+        if originalPlaceholder and originalPlaceholder ~= "" then
+            task.spawn(function()
+                local translated = RequestApiTranslation(originalPlaceholder)
+                if translated and element.Parent then
+                    element.PlaceholderText = translated
                 end
-                container.DescendantAdded:Connect(processSingleUI)
+            end)
+        end
+    end
+    
+    -- 监听文本后续修改
+    element:GetPropertyChangedSignal("Text"):Connect(function()
+        local currentText = element.Text
+        if currentText and currentText ~= "" and not TranslationCache[currentText] then
+            task.spawn(function()
+                local translated = RequestApiTranslation(currentText)
+                if translated and element.Parent and element.Text == currentText then
+                    element.Text = translated
+                end
             end)
         end
     end)
 end
 
------------------------------------------------------------
--- 🎨 [通用脚本作者信息弹窗]
------------------------------------------------------------
-local function showAuthorNotification(playSound)
-    local notifyGui = Instance.new("ScreenGui")
-    notifyGui.Name = "TaibaoNotifyGui"
-    notifyGui.ResetOnSpawn = false
-    notifyGui.DisplayOrder = 9999
-    
-    if gethui then notifyGui.Parent = gethui()
-    elseif syn and syn.protect_gui then syn.protect_gui(notifyGui); notifyGui.Parent = CoreGui
-    else notifyGui.Parent = CoreGui end
-
-    if playSound ~= false then
-        local sound = Instance.new("Sound")
-        sound.SoundId = "rbxassetid://602698205"
-        sound.Volume = 1
-        sound.Parent = notifyGui
-        sound:Play()
+-- ==================== 4. 容器扫描与监听 = ====================
+local function ScanContainer(container)
+    for _, descendant in ipairs(container:GetDescendants()) do
+        ProcessElement(descendant)
     end
-
-    local cardFrame = Instance.new("Frame")
-    cardFrame.Size = UDim2.new(0, 260, 0, 66)
-    cardFrame.Position = UDim2.new(1, 20, 1, -86)
-    cardFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
-    cardFrame.BorderSizePixel = 0
-    cardFrame.Parent = notifyGui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = cardFrame
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 2
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Parent = cardFrame
-
-    local accentBar = Instance.new("Frame")
-    accentBar.Size = UDim2.new(0, 4, 1, -12)
-    accentBar.Position = UDim2.new(0, 6, 0, 6)
-    accentBar.BorderSizePixel = 0
-    accentBar.Parent = cardFrame
-
-    local barCorner = Instance.new("UICorner")
-    barCorner.CornerRadius = UDim.new(0, 4)
-    barCorner.Parent = accentBar
-
-    local topLabel = Instance.new("TextLabel")
-    topLabel.Size = UDim2.new(1, -22, 0, 18)
-    topLabel.Position = UDim2.new(0, 16, 0, 5)
-    topLabel.BackgroundTransparency = 1
-    topLabel.Font = Enum.Font.SourceSansBold
-    topLabel.Text = "✨ 智能队列实时汉化已就绪"
-    topLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    topLabel.TextSize = 14
-    topLabel.TextXAlignment = Enum.TextXAlignment.Left
-    topLabel.Parent = cardFrame
-
-    local midLabel = Instance.new("TextLabel")
-    midLabel.Size = UDim2.new(1, -22, 0, 16)
-    midLabel.Position = UDim2.new(0, 16, 0, 24)
-    midLabel.BackgroundTransparency = 1
-    midLabel.Font = Enum.Font.SourceSans
-    midLabel.Text = "⚡ 模式: 智能流控 / 实时翻译"
-    midLabel.TextColor3 = Color3.fromRGB(0, 230, 180)
-    midLabel.TextSize = 12
-    midLabel.TextXAlignment = Enum.TextXAlignment.Left
-    midLabel.Parent = cardFrame
-
-    local bottomLabel = Instance.new("TextLabel")
-    bottomLabel.Size = UDim2.new(1, -22, 0, 16)
-    bottomLabel.Position = UDim2.new(0, 16, 0, 42)
-    bottomLabel.BackgroundTransparency = 1
-    bottomLabel.Font = Enum.Font.SourceSans
-    bottomLabel.Text = "作者: Taibao001  |  🐧群聊: 1038531272"
-    bottomLabel.TextColor3 = Color3.fromRGB(180, 185, 195)
-    bottomLabel.TextSize = 12
-    bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
-    bottomLabel.Parent = cardFrame
-
-    local rainbowConnection
-    rainbowConnection = RunService.RenderStepped:Connect(function()
-        local hue = (tick() % 2) / 2
-        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
-        stroke.Color = rainbowColor
-        accentBar.BackgroundColor3 = rainbowColor
-    end)
-
-    local tweenIn = TweenService:Create(cardFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -275, 1, -86)})
-    tweenIn:Play()
-
-    task.delay(2.8, function()
-        local tweenInfoOut = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-        TweenService:Create(cardFrame, tweenInfoOut, {Position = UDim2.new(1, 20, 1, -86), BackgroundTransparency = 1}):Play()
-        TweenService:Create(stroke, tweenInfoOut, {Transparency = 1}):Play()
-        TweenService:Create(accentBar, tweenInfoOut, {BackgroundTransparency = 1}):Play()
-        TweenService:Create(topLabel, tweenInfoOut, {TextTransparency = 1}):Play()
-        TweenService:Create(midLabel, tweenInfoOut, {TextTransparency = 1}):Play()
-        local tweenOut = TweenService:Create(bottomLabel, tweenInfoOut, {TextTransparency = 1})
-        tweenOut:Play()
-
-        tweenOut.Completed:Connect(function()
-            if rainbowConnection then rainbowConnection:Disconnect() end
-            notifyGui:Destroy()
-        end)
+    
+    container.DescendantAdded:Connect(function(descendant)
+        ProcessElement(descendant)
     end)
 end
 
------------------------------------------------------------
--- 🚀 [启动逻辑]
------------------------------------------------------------
-print("[Taibao Script] 智能队列流控汉化脚本启动成功")
-startScan()
-
+-- ==================== 5. 启动程序 = ====================
 task.spawn(function()
-    task.wait(0.2)
-    local isSpecialUser = AllowedDevelopers[LocalPlayer.Name] or AllowedTesterUsers[LocalPlayer.Name]
-    showAuthorNotification(not isSpecialUser)
+    ScanContainer(PlayerGui)
+    pcall(function()
+        ScanContainer(CoreGui)
+    end)
+    print("[API Localization] 全动态 API 汉化脚本已成功启动！")
 end)
