@@ -1,95 +1,94 @@
+-- 1. 基础环境检测与提示
 local httpRequest = (syn and syn.request) or request or (fluxus and fluxus.request) or http_request
 if not httpRequest then
-	error("当前注入器不支持标准的 HTTP 请求函数！")
+	game.StarterGui:SetCore("SendNotification", {
+		Title = "翻译脚本报错",
+		Text = "当前注入器不支持 request 函数！",
+		Duration = 5
+	})
+	return
 end
 
-local HttpService = game:GetService("HttpService")
-local GoogleTranslator = {
-	Cache = {} -- 本地翻译缓存表，避免重复请求
-}
+game.StarterGui:SetCore("SendNotification", {
+	Title = "翻译工具",
+	Text = "脚本已成功注入，开始全局暴力汉化...",
+	Duration = 3
+})
 
--- 核心翻译函数（带缓存）
-function GoogleTranslator.Translate(text)
-	if not text or text == "" then return text end
+local HttpService = game:GetService("HttpService")
+
+-- 2. 核心翻译函数（直连 Google 接口）
+local function TranslateText(text)
+	if not text or text == "" or #text < 2 then return text end
+	-- 过滤纯数字或特殊符号
+	if text:match("^[%d%p%s]+$") then return text end
 	
-	-- 1. 去除首尾空格，检查缓存
-	text = text:match("^%s*(.-)%s*$")
-	if GoogleTranslator.Cache[text] then
-		return GoogleTranslator.Cache[text]
-	end
-	
-	-- 2. 对文本进行 URL 编码
-	local encodedText = text:gsub("([^%w%.%-])", function(c)
+	local encoded = text:gsub("([^%w%.%-])", function(c)
 		return string.format("%%%02X", string.byte(c))
 	end)
 	
-	local url = string.format("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=%s", encodedText)
+	local url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=" .. encoded
 	
-	-- 3. 发送网络请求（使用 pcall 确保不崩脚本）
-	local success, response = pcall(function()
-		return httpRequest({
-			Url = url,
-			Method = "GET"
-		})
+	local success, res = pcall(function()
+		return httpRequest({ Url = url, Method = "GET" })
 	end)
 	
-	if success and response and response.StatusCode == 200 then
-		local decodeSuccess, data = pcall(function()
-			return HttpService:JSONDecode(response.Body)
+	if success and res and res.StatusCode == 200 then
+		local decSuccess, data = pcall(function()
+			return HttpService:JSONDecode(res.Body)
 		end)
-		
-		if decodeSuccess and data and data[1] then
+		if decSuccess and data and data[1] then
 			local result = ""
 			for _, v in ipairs(data[1]) do
-				if v[1] then
-					result = result .. v[1]
-				end
+				if v[1] then result = result .. v[1] end
 			end
-			
 			if result ~= "" then
-				-- 写入缓存
-				GoogleTranslator.Cache[text] = result
+				print("成功翻译: " .. text .. " -> " .. result)
 				return result
 			end
 		end
 	end
-	
-	-- 失败或超时返回原文，并加入缓存防止反复死请求
-	GoogleTranslator.Cache[text] = text
 	return text
 end
 
---[[
-	异步流式汉化 UI（防卡顿核心）
-	@param parentObject 包含文本的 UI 容器（如 ScreenGui）
-]]
-function GoogleTranslator.TranslateUIAsync(parentObject)
-	task.spawn(function()
-		local descendants = parentObject:GetDescendants()
-		local batchCount = 0
-		
-		for _, child in ipairs(descendants) do
-			if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
-				if child.Text and child.Text ~= "" and not GoogleTranslator.Cache[child.Text] then
-					local originalText = child.Text
-					
-					-- 异步单个处理，绝不卡主线程
-					task.spawn(function()
-						local translated = GoogleTranslator.Translate(originalText)
-						if child and child.Parent then
-							child.Text = translated
-						end
-					end)
-					
-					batchCount = batchCount + 1
-					-- 每发起 5 个请求稍微暂停 0.05 秒，防止触发注入器网络流控或客户端瞬间掉帧
-					if batchCount % 5 == 0 then
-						task.wait(0.05)
+-- 3. 全局扫描整个游戏里的所有界面（同时遍历 CoreGui 和 PlayerGui）
+local function ScanAndTranslate(root)
+	for _, obj in ipairs(root:GetDescendants()) do
+		if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+			-- 如果有文字且没被汉化过
+			if obj.Text and obj.Text ~= "" and not obj:GetAttribute("Translated") then
+				obj:SetAttribute("Translated", true) -- 标记为已处理，防止重复请求
+				local original = obj.Text
+				
+				task.spawn(function()
+					local translated = TranslateText(original)
+					if obj and obj.Parent then
+						obj.Text = translated
 					end
-				end
+				end)
 			end
 		end
-	end)
+	end
 end
 
-return GoogleTranslator
+-- 立即执行一次扫描
+ScanAndTranslate(game:GetService("CoreGui"))
+if game.Players.LocalPlayer then
+	ScanAndTranslate(game.Players.LocalPlayer:WaitForChild("PlayerGui", 2))
+end
+
+-- 4. 监听后续动态生成的 UI（防止有些脚本是执行后几秒才弹出的）
+game:GetService("CoreGui").DescendantAdded:Connect(function(obj)
+	if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+		task.wait(0.2) -- 等待文本初始化
+		if obj.Text and obj.Text ~= "" and not obj:GetAttribute("Translated") then
+			obj:SetAttribute("Translated", true)
+			local original = obj.Text
+			task.spawn(function()
+				obj.Text = TranslateText(original)
+			end)
+		end
+	end
+end)
+
+print("【汉化接口】已全方位挂载成功！")
