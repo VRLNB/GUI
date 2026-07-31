@@ -22,6 +22,7 @@ local syn = safeGet("syn")
 local request = safeGet("request")
 local http_request = safeGet("http_request")
 local http = safeGet("http")
+local gethui = safeGet("gethui")  -- 注入器隐藏UI容器函数
 
 if syn and type(syn) == "table" and syn.request then
 	httpGet = function(url)
@@ -350,52 +351,71 @@ local function isEnglish(text)
 	return hasAlpha
 end
 
--- 全局扫描所有可能的文本对象
+-- 收集文本对象的辅助函数
+local function collectTextObjects(parent, objects)
+	pcall(function()
+		for _, obj in ipairs(parent:GetDescendants()) do
+			local cn = obj.ClassName or ""
+			if cn == "TextLabel" or cn == "TextButton" or cn == "TextBox" then
+				objects[#objects + 1] = obj
+			end
+		end
+	end)
+end
+
+-- 全局扫描所有可能的文本对象（包括注入器隐藏UI）
 local function findTextObjects()
 	local objects = {}
 
-	-- 1. 扫描 PlayerGui（游戏界面）
+	-- 1. PlayerGui（Roblox 自带 UI）
 	pcall(function()
 		for _, gui in ipairs(playerGui:GetChildren()) do
-			if gui:IsA("ScreenGui") and gui.Name ~= "TranslatePanel" then
-				for _, obj in ipairs(gui:GetDescendants()) do
-					local cn = obj.ClassName or ""
-					if cn == "TextLabel" or cn == "TextButton" or cn == "TextBox" then
-						objects[#objects + 1] = obj
-					end
-				end
+			if gui.Name ~= "TranslatePanel" then
+				collectTextObjects(gui, objects)
 			end
 		end
 	end)
 
-	-- 2. 扫描 CoreGui（部分游戏把UI放在这里）
+	-- 2. CoreGui（Roblox 核心 UI + 部分脚本 UI）
 	pcall(function()
 		local coreGui = game:FindService("CoreGui")
 		if coreGui then
-			for _, gui in ipairs(coreGui:GetChildren()) do
-				if gui:IsA("ScreenGui") then
-					for _, obj in ipairs(gui:GetDescendants()) do
-						local cn = obj.ClassName or ""
-						if cn == "TextLabel" or cn == "TextButton" or cn == "TextBox" then
-							objects[#objects + 1] = obj
-						end
-					end
-				end
+			collectTextObjects(coreGui, objects)
+		end
+	end)
+
+	-- 3. ★关键★ gethui()（注入器隐藏容器，第三方脚本UI都在这里）
+	pcall(function()
+		if gethui and type(gethui) == "function" then
+			local hui = gethui()
+			if hui then
+				collectTextObjects(hui, objects)
 			end
 		end
 	end)
 
-	-- 3. 扫描 Workspace 中的 SurfaceGui / BillboardGui（3D世界中的文字）
+	-- 3.5 备用：部分注入器用 get_hui 或 GetHui
 	pcall(function()
-		local workspace = game:GetService("Workspace")
-		for _, obj in ipairs(workspace:GetDescendants()) do
+		local alt1 = safeGet("get_hui")
+		local alt2 = safeGet("GetHui")
+		local fn = alt1 or alt2
+		if fn and type(fn) == "function" then
+			local hui = fn()
+			if hui then
+				collectTextObjects(hui, objects)
+			end
+		end
+	end)
+
+	-- 4. 兜底：扫描所有已知的 GUI 容器类型
+	-- 有些注入器把 UI 直接挂在 game 下或其他地方
+	pcall(function()
+		for _, obj in ipairs(game:GetDescendants()) do
 			local cn = obj.ClassName or ""
-			if cn == "SurfaceGui" or cn == "BillboardGui" or cn == "ScreenGui" then
-				for _, child in ipairs(obj:GetDescendants()) do
-					local ccn = child.ClassName or ""
-					if ccn == "TextLabel" or ccn == "TextButton" or ccn == "TextBox" then
-						objects[#objects + 1] = child
-					end
+			if cn == "ScreenGui" or cn == "SurfaceGui" or cn == "BillboardGui" then
+				-- 跳过我们自己的面板
+				if obj.Name ~= "TranslatePanel" then
+					collectTextObjects(obj, objects)
 				end
 			end
 		end
@@ -486,9 +506,14 @@ end)
 print("----------------------------------------")
 print(" 翻译面板 已就绪")
 print(" 环境: " .. envName)
+if gethui then
+	print(" 隐藏容器: gethui() 已检测 ✓")
+else
+	print(" 隐藏容器: gethui() 未检测到")
+end
 print(" 面板可拖拽 | 点击开关开启")
 print(" 开启后实时翻译所有英文 → 中文")
-print(" 扫描范围: PlayerGui + CoreGui + Workspace")
+print(" 扫描范围: PlayerGui + CoreGui + gethui + 全局兜底")
 print("========================================")
 
 return true
