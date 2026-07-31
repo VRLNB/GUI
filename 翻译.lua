@@ -584,8 +584,7 @@ else
 end
 
 -- ==================== 使用示例（注释掉，按需取消） ====================
-
---[[
+ [[
 -- 基础翻译
 local zh = GoogleTranslate:Translate("Hello World", "zh-CN")       -- 英→中
 local ja = GoogleTranslate:Translate("你好", "ja")                  -- 中→日
