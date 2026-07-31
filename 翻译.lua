@@ -1,8 +1,11 @@
 --[[
-	Roblox 翻译面板 - 注入器通用版
-	一个带开关按钮的浮动 UI，开启后自动翻译当前游戏界面中的所有英文文本
+	Roblox 实时翻译面板 - 注入器通用版
+	带开关UI，开启后实时扫描并翻译游戏中的所有英文文本
 	使用 Google 翻译公开接口，无需 API Key
 ]]
+print("========================================")
+print(" 实时翻译面板 加载中...")
+print("========================================")
 
 -- ==================== 安全全局变量访问 ====================
 local function safeGet(name)
@@ -86,19 +89,20 @@ end
 -- ==================== 翻译函数 ====================
 local cache = {}
 local lastTime = 0
-local interval = 0.3
+local interval = 0.25
 
 local function translate(text, toLang)
 	toLang = toLang or "zh-CN"
 	if not text or text == "" then return text end
 
-	local key = "auto|" .. toLang .. "|" .. text
+	local key = toLang .. "|" .. text
 	if cache[key] then return cache[key] end
 
 	-- 频率限制
 	local now = tick()
-	if now - lastTime < interval then
-		wait(interval - (now - lastTime))
+	local diff = now - lastTime
+	if diff < interval then
+		wait(interval - diff)
 	end
 	lastTime = tick()
 
@@ -109,7 +113,7 @@ local function translate(text, toLang)
 	local body = httpGet(url)
 	if not body then return text end
 
-	-- 解析
+	-- 解析 JSON
 	local data
 	if jsonDecode then
 		pcall(function() data = jsonDecode(body) end)
@@ -141,48 +145,41 @@ end
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- 主容器
+-- 销毁旧面板
+local existing = playerGui:FindFirstChild("TranslatePanel")
+if existing then existing:Destroy() wait(0.3) end
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TranslatePanel"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
--- 检查是否已存在，避免重复创建
-local existing = playerGui:FindFirstChild("TranslatePanel")
-if existing then
-	existing:Destroy()
-	wait(0.5)
-end
+ScreenGui.DisplayOrder = 999
 ScreenGui.Parent = playerGui
 
--- ====== 面板主体 ======
+-- ====== 面板 ======
 local Panel = Instance.new("Frame")
-Panel.Name = "MainPanel"
-Panel.Size = UDim2.new(0, 220, 0, 140)
-Panel.Position = UDim2.new(0.5, -110, 0.3, 0)
-Panel.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Panel.Size = UDim2.new(0, 230, 0, 150)
+Panel.Position = UDim2.new(0.5, -115, 0.3, 0)
+Panel.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 Panel.BorderSizePixel = 0
-Panel.BackgroundTransparency = 0.05
+Panel.BackgroundTransparency = 0.03
 Panel.ClipsDescendants = true
 Panel.Parent = ScreenGui
 
--- 圆角
 local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 10)
 Corner.Parent = Panel
 
--- 阴影
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(60, 180, 255)
+Stroke.Color = Color3.fromRGB(0, 200, 255)
 Stroke.Thickness = 1.5
-Stroke.Transparency = 0.4
+Stroke.Transparency = 0.5
 Stroke.Parent = Panel
 
--- ====== 标题栏（可拖拽） ======
+-- ====== 标题栏 ======
 local TitleBar = Instance.new("Frame")
-TitleBar.Name = "TitleBar"
 TitleBar.Size = UDim2.new(1, 0, 0, 36)
-TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+TitleBar.BackgroundColor3 = Color3.fromRGB(32, 32, 40)
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = Panel
 
@@ -190,9 +187,7 @@ local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 10)
 TitleCorner.Parent = TitleBar
 
--- 标题文字
 local Title = Instance.new("TextLabel")
-Title.Name = "Title"
 Title.Size = UDim2.new(1, -40, 1, 0)
 Title.Position = UDim2.new(0, 14, 0, 0)
 Title.BackgroundTransparency = 1
@@ -205,7 +200,6 @@ Title.Parent = TitleBar
 
 -- 状态指示点
 local StatusDot = Instance.new("Frame")
-StatusDot.Name = "StatusDot"
 StatusDot.Size = UDim2.new(0, 8, 0, 8)
 StatusDot.Position = UDim2.new(1, -30, 0.5, -4)
 StatusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
@@ -216,9 +210,8 @@ local DotCorner = Instance.new("UICorner")
 DotCorner.CornerRadius = UDim.new(1, 0)
 DotCorner.Parent = StatusDot
 
--- ====== 内容区域 ======
+-- ====== 内容区 ======
 local Content = Instance.new("Frame")
-Content.Name = "Content"
 Content.Size = UDim2.new(1, 0, 1, -36)
 Content.Position = UDim2.new(0, 0, 0, 36)
 Content.BackgroundTransparency = 1
@@ -226,7 +219,6 @@ Content.Parent = Panel
 
 -- 状态文字
 local StatusText = Instance.new("TextLabel")
-StatusText.Name = "StatusText"
 StatusText.Size = UDim2.new(1, -30, 0, 24)
 StatusText.Position = UDim2.new(0, 15, 0, 12)
 StatusText.BackgroundTransparency = 1
@@ -237,9 +229,8 @@ StatusText.TextSize = 14
 StatusText.TextXAlignment = Enum.TextXAlignment.Left
 StatusText.Parent = Content
 
--- 开关按钮背景
+-- 开关背景
 local ToggleBg = Instance.new("Frame")
-ToggleBg.Name = "ToggleBg"
 ToggleBg.Size = UDim2.new(0, 56, 0, 28)
 ToggleBg.Position = UDim2.new(1, -70, 0, 10)
 ToggleBg.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
@@ -252,7 +243,6 @@ ToggleCorner.Parent = ToggleBg
 
 -- 开关滑块
 local ToggleKnob = Instance.new("Frame")
-ToggleKnob.Name = "ToggleKnob"
 ToggleKnob.Size = UDim2.new(0, 22, 0, 22)
 ToggleKnob.Position = UDim2.new(0, 3, 0, 3)
 ToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -265,7 +255,6 @@ KnobCorner.Parent = ToggleKnob
 
 -- 分隔线
 local Divider = Instance.new("Frame")
-Divider.Name = "Divider"
 Divider.Size = UDim2.new(1, -30, 0, 1)
 Divider.Position = UDim2.new(0, 15, 0, 50)
 Divider.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
@@ -274,7 +263,6 @@ Divider.Parent = Content
 
 -- 翻译计数
 local CountText = Instance.new("TextLabel")
-CountText.Name = "CountText"
 CountText.Size = UDim2.new(1, -30, 0, 20)
 CountText.Position = UDim2.new(0, 15, 0, 60)
 CountText.BackgroundTransparency = 1
@@ -285,20 +273,31 @@ CountText.TextSize = 12
 CountText.TextXAlignment = Enum.TextXAlignment.Left
 CountText.Parent = Content
 
+-- 扫描范围
+local ScanText = Instance.new("TextLabel")
+ScanText.Size = UDim2.new(1, -30, 0, 20)
+ScanText.Position = UDim2.new(0, 15, 0, 84)
+ScanText.BackgroundTransparency = 1
+ScanText.Font = Enum.Font.Gotham
+ScanText.Text = "扫描: 全局"
+ScanText.TextColor3 = Color3.fromRGB(120, 120, 125)
+ScanText.TextSize = 11
+ScanText.TextXAlignment = Enum.TextXAlignment.Left
+ScanText.Parent = Content
+
 -- 底部提示
 local HintText = Instance.new("TextLabel")
-HintText.Name = "HintText"
 HintText.Size = UDim2.new(1, -30, 0, 20)
-HintText.Position = UDim2.new(0, 15, 0, 84)
+HintText.Position = UDim2.new(0, 15, 0, 108)
 HintText.BackgroundTransparency = 1
 HintText.Font = Enum.Font.Gotham
-HintText.Text = "点击开关开启翻译"
-HintText.TextColor3 = Color3.fromRGB(120, 120, 125)
+HintText.Text = "点击开关开启实时翻译"
+HintText.TextColor3 = Color3.fromRGB(100, 100, 105)
 HintText.TextSize = 11
 HintText.TextXAlignment = Enum.TextXAlignment.Left
 HintText.Parent = Content
 
--- ====== 拖拽逻辑 ======
+-- ====== 拖拽 ======
 local dragging = false
 local dragStart = nil
 local panelStart = nil
@@ -320,88 +319,14 @@ TitleBar.InputChanged:Connect(function(input)
 	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = input.Position - dragStart
 		Panel.Position = UDim2.new(
-			panelStart.X.Scale,
-			panelStart.X.Offset + delta.X,
-			panelStart.Y.Scale,
-			panelStart.Y.Offset + delta.Y
+			panelStart.X.Scale, panelStart.X.Offset + delta.X,
+			panelStart.Y.Scale, panelStart.Y.Offset + delta.Y
 		)
 	end
 end)
 
--- ====== 开关逻辑 ======
-local enabled = false
-local translatedCount = 0
-local translatedSet = {}
-
-local function scanAndTranslate()
-	if not enabled then return end
-
-	pcall(function()
-		-- 遍历所有 ScreenGui
-		local guis = playerGui:GetChildren()
-		for _, gui in ipairs(guis) do
-			if gui:IsA("ScreenGui") and gui.Name ~= "TranslatePanel" then
-				-- 遍历所有后代
-				local descendants = gui:GetDescendants()
-				for _, obj in ipairs(descendants) do
-					pcall(function()
-						local cn = obj.ClassName or ""
-						if cn == "TextLabel" or cn == "TextButton" or cn == "TextBox" then
-							local text = obj.Text
-							if text and text ~= "" and #text > 0 then
-								-- 检查是否已翻译过
-								if not translatedSet[obj] then
-									-- 判断是否包含英文
-									local hasEnglish = false
-									for ch in text:gmatch("[%a]") do
-										hasEnglish = true
-										break
-									end
-									if hasEnglish then
-										local translated = translate(text, "zh-CN")
-										if translated ~= text then
-											obj.Text = translated
-											translatedCount = translatedCount + 1
-											CountText.Text = "已翻译: " .. translatedCount .. " 条"
-										end
-									end
-									translatedSet[obj] = true
-								end
-							end
-						end
-					end)
-				end
-			end
-		end
-	end)
-end
-
-local function toggle(on)
-	enabled = on
-	if on then
-		-- 开启
-		ToggleBg.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-		ToggleKnob:TweenPosition(UDim2.new(1, -25, 0, 3), "Out", "Quad", 0.2, true)
-		StatusDot.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
-		StatusText.Text = "翻译: 开启中"
-		StatusText.TextColor3 = Color3.fromRGB(0, 255, 150)
-		HintText.Text = "正在自动翻译界面文本..."
-		print("[翻译面板] 已开启翻译")
-	else
-		-- 关闭
-		ToggleBg.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-		ToggleKnob:TweenPosition(UDim2.new(0, 3, 0, 3), "Out", "Quad", 0.2, true)
-		StatusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-		StatusText.Text = "翻译: 关闭"
-		StatusText.TextColor3 = Color3.fromRGB(200, 200, 200)
-		HintText.Text = "点击开关开启翻译"
-		print("[翻译面板] 已关闭翻译")
-	end
-end
-
--- 开关点击
+-- ====== 开关 ======
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Name = "ToggleBtn"
 toggleBtn.Size = UDim2.new(0, 56, 0, 28)
 toggleBtn.Position = UDim2.new(1, -70, 0, 10)
 toggleBtn.BackgroundTransparency = 1
@@ -409,30 +334,161 @@ toggleBtn.Text = ""
 toggleBtn.ZIndex = 10
 toggleBtn.Parent = Content
 
+-- ====== 核心：实时翻译逻辑 ======
+local enabled = false
+local translatedCount = 0
+local textCache = {}  -- 缓存 {原始文本 → 翻译后文本}
+
+-- 判断文本是否包含英文
+local function isEnglish(text)
+	if not text or text == "" then return false end
+	local hasAlpha = false
+	for ch in text:gmatch("[%a]") do
+		hasAlpha = true
+		break
+	end
+	return hasAlpha
+end
+
+-- 全局扫描所有可能的文本对象
+local function findTextObjects()
+	local objects = {}
+
+	-- 1. 扫描 PlayerGui（游戏界面）
+	pcall(function()
+		for _, gui in ipairs(playerGui:GetChildren()) do
+			if gui:IsA("ScreenGui") and gui.Name ~= "TranslatePanel" then
+				for _, obj in ipairs(gui:GetDescendants()) do
+					local cn = obj.ClassName or ""
+					if cn == "TextLabel" or cn == "TextButton" or cn == "TextBox" then
+						objects[#objects + 1] = obj
+					end
+				end
+			end
+		end
+	end)
+
+	-- 2. 扫描 CoreGui（部分游戏把UI放在这里）
+	pcall(function()
+		local coreGui = game:FindService("CoreGui")
+		if coreGui then
+			for _, gui in ipairs(coreGui:GetChildren()) do
+				if gui:IsA("ScreenGui") then
+					for _, obj in ipairs(gui:GetDescendants()) do
+						local cn = obj.ClassName or ""
+						if cn == "TextLabel" or cn == "TextButton" or cn == "TextBox" then
+							objects[#objects + 1] = obj
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	-- 3. 扫描 Workspace 中的 SurfaceGui / BillboardGui（3D世界中的文字）
+	pcall(function()
+		local workspace = game:GetService("Workspace")
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			local cn = obj.ClassName or ""
+			if cn == "SurfaceGui" or cn == "BillboardGui" or cn == "ScreenGui" then
+				for _, child in ipairs(obj:GetDescendants()) do
+					local ccn = child.ClassName or ""
+					if ccn == "TextLabel" or ccn == "TextButton" or ccn == "TextBox" then
+						objects[#objects + 1] = child
+					end
+				end
+			end
+		end
+	end)
+
+	return objects
+end
+
+-- 实时翻译循环
+local function translateLoop()
+	while true do
+		if enabled then
+			pcall(function()
+				local objects = findTextObjects()
+				local newTranslated = 0
+
+				for _, obj in ipairs(objects) do
+					pcall(function()
+						local text = obj.Text
+						if text and text ~= "" and #text > 0 and isEnglish(text) then
+							-- 关键：不基于对象判断，基于文本内容判断
+							-- 如果文本已经被翻译过（在缓存中），直接用缓存
+							local cached = textCache[text]
+							if cached then
+								-- 文本变了？更新
+								if obj.Text ~= cached and obj.Text == text then
+									obj.Text = cached
+									newTranslated = newTranslated + 1
+								end
+							else
+								-- 新文本，需要翻译
+								local translated = translate(text, "zh-CN")
+								if translated ~= text then
+									textCache[text] = translated
+									obj.Text = translated
+									newTranslated = newTranslated + 1
+								end
+							end
+						end
+					end)
+				end
+
+				if newTranslated > 0 then
+					translatedCount = translatedCount + newTranslated
+					CountText.Text = "已翻译: " .. translatedCount .. " 条"
+					ScanText.Text = "扫描: " .. #objects .. " 个对象"
+				end
+			end)
+		end
+		wait(0.5)  -- 每 0.5 秒扫描一次，更实时
+	end
+end
+
+local function toggle(on)
+	enabled = on
+	if on then
+		ToggleBg.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+		ToggleKnob:TweenPosition(UDim2.new(1, -25, 0, 3), "Out", "Quad", 0.2, true)
+		StatusDot.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
+		StatusText.Text = "翻译: 实时运行中"
+		StatusText.TextColor3 = Color3.fromRGB(0, 255, 150)
+		HintText.Text = "持续翻译所有英文文本..."
+		print("[翻译面板] 已开启实时翻译")
+	else
+		ToggleBg.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+		ToggleKnob:TweenPosition(UDim2.new(0, 3, 0, 3), "Out", "Quad", 0.2, true)
+		StatusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+		StatusText.Text = "翻译: 已关闭"
+		StatusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+		HintText.Text = "点击开关开启实时翻译"
+		print("[翻译面板] 已关闭翻译")
+	end
+end
+
 toggleBtn.MouseButton1Click:Connect(function()
 	toggle(not enabled)
 end)
 
--- ====== 扫描循环 ======
-local scanLoop
-scanLoop = coroutine.wrap(function()
-	while true do
-		scanAndTranslate()
-		wait(1) -- 每秒扫描一次
-	end
-end)
-scanLoop()
+-- ====== 启动翻译循环 ======
+coroutine.wrap(translateLoop)()
 
--- ====== 退出时清理 ======
+-- ====== 清理 ======
 player.CharacterRemoving:Connect(function()
 	ScreenGui:Destroy()
 end)
 
--- ====== 启动日志 ======
-print("========================================")
-print(" 翻译面板 已加载")
+-- ====== 日志 ======
+print("----------------------------------------")
+print(" 翻译面板 已就绪")
 print(" 环境: " .. envName)
-print(" 拖拽标题栏移动面板")
-print(" 点击开关按钮开启翻译")
-print(" 开启后每 1 秒自动扫描并翻译")
+print(" 面板可拖拽 | 点击开关开启")
+print(" 开启后实时翻译所有英文 → 中文")
+print(" 扫描范围: PlayerGui + CoreGui + Workspace")
 print("========================================")
+
+return true
