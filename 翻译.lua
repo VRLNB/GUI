@@ -1,955 +1,999 @@
 --[[
-	LuminaUI - 独立版（直接运行即可弹出界面）
-	复制全部代码到你的注入器执行即可
+	LuminaUI v2.0 - 高颜值独立版
+	玻璃拟态 · 渐变光效 · 流畅动画
+	复制全部代码到注入器执行即可
 ]]
 
--- ==================== 第一步：环境检测（全部用pcall保护） ====================
-print("[LuminaUI] 正在检测环境...")
+-- ==================== 环境检测 ====================
+print("[Lumina] 启动中...")
 
--- 检查 game 对象
-local gameExists = pcall(function() return game end)
-if not gameExists then
-	print("[LuminaUI] 错误: game 对象不存在，请在Roblox环境中运行")
-	return
+local env = {}
+local function safe(fn, errMsg)
+	local ok, result = pcall(fn)
+	if not ok then print("[Lumina] " .. (errMsg or "错误") .. ": " .. tostring(result)) end
+	return ok, result
 end
 
--- 逐个安全获取服务
-local Players, player, playerGui, mouse, TweenService, UserInputService, RunService
+safe(function() env.game = game end, "game对象不存在")
+if not env.game then return end
 
-local ok, result = pcall(function() return game:GetService("Players") end)
-if ok then Players = result else print("[LuminaUI] 无法获取 Players 服务") end
+safe(function() env.Players = env.game:GetService("Players") end)
+safe(function() env.Tween = env.game:GetService("TweenService") end)
+safe(function() env.UIS = env.game:GetService("UserInputService") end)
+safe(function() env.Run = env.game:GetService("RunService") end)
 
-local ok2, result2 = pcall(function() return game:GetService("TweenService") end)
-if ok2 then TweenService = result2 else print("[LuminaUI] 无法获取 TweenService") end
-
-local ok3, result3 = pcall(function() return game:GetService("UserInputService") end)
-if ok3 then UserInputService = result3 else print("[LuminaUI] 无法获取 UserInputService") end
-
-local ok4, result4 = pcall(function() return game:GetService("RunService") end)
-if ok4 then RunService = result4 else print("[LuminaUI] 无法获取 RunService") end
-
--- 获取 Player
-if Players then
-	pcall(function()
-		player = Players.LocalPlayer
-		if not player then
-			player = Players:FindFirstChildOfClass("Player")
-		end
+-- 等 Player
+for i = 1, 100 do
+	safe(function()
+		env.plr = env.Players.LocalPlayer or env.Players:FindFirstChildOfClass("Player")
 	end)
+	if env.plr then break end
+	wait(0.1)
+end
+if not env.plr then print("[Lumina] 无法获取LocalPlayer"); return end
+
+-- 等 PlayerGui
+safe(function()
+	env.pgui = env.plr:FindFirstChild("PlayerGui")
+	if not env.pgui then env.pgui = env.plr:WaitForChild("PlayerGui", 5) end
+end)
+if not env.pgui then print("[Lumina] 无法获取PlayerGui"); return end
+
+safe(function() env.mouse = env.plr:GetMouse() end)
+
+print("[Lumina] 环境就绪 | 玩家: " .. env.plr.Name)
+
+-- ==================== 颜色主题 ====================
+local C = {
+	Bg     = Color3.fromRGB(10, 10, 16),
+	Bg2    = Color3.fromRGB(16, 16, 26),
+	Card   = Color3.fromRGB(20, 20, 32),
+	Card2  = Color3.fromRGB(26, 26, 42),
+	Accent = Color3.fromRGB(120, 80, 255),   -- 紫色主色
+	Accent2= Color3.fromRGB(255, 80, 160),   -- 粉色辅色
+	Green  = Color3.fromRGB(40, 220, 120),
+	Red    = Color3.fromRGB(255, 65, 85),
+	Orange = Color3.fromRGB(255, 160, 50),
+	White  = Color3.fromRGB(255, 255, 255),
+	Gray   = Color3.fromRGB(150, 150, 165),
+	Gray2  = Color3.fromRGB(100, 100, 115),
+	Line   = Color3.fromRGB(40, 40, 55),
+}
+
+-- ==================== 工具函数 ====================
+local function New(cls, props, parent)
+	local obj = Instance.new(cls)
+	for k, v in pairs(props) do pcall(function() obj[k] = v end) end
+	if parent then obj.Parent = parent end
+	return obj
 end
 
-if not player then
-	print("[LuminaUI] 正在等待 LocalPlayer...")
-	-- 等待最多10秒
-	for i = 1, 100 do
-		pcall(function()
-			player = Players.LocalPlayer or Players:FindFirstChildOfClass("Player")
-		end)
-		if player then break end
-		wait(0.1)
-	end
+local function Corner(p, r)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, r or 8)
+	c.Parent = p
+	return c
 end
 
-if not player then
-	print("[LuminaUI] 错误: 无法获取 LocalPlayer")
-	return
+local function Stroke(p, color, t)
+	local s = Instance.new("UIStroke")
+	s.Color = color or C.Line
+	s.Thickness = t or 1
+	s.Parent = p
+	return s
 end
 
--- 获取 PlayerGui
-pcall(function()
-	playerGui = player:FindFirstChild("PlayerGui")
-	if not playerGui then
-		-- 等待 PlayerGui 出现
-		playerGui = player:WaitForChild("PlayerGui", 5)
-	end
-end)
-
-if not playerGui then
-	print("[LuminaUI] 错误: 无法获取 PlayerGui")
-	return
+local function Gradient(p, c1, c2, rot)
+	local g = Instance.new("UIGradient")
+	g.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, c1 or C.Accent),
+		ColorSequenceKeypoint.new(1, c2 or C.Accent2),
+	}
+	g.Rotation = rot or 135
+	g.Parent = p
+	return g
 end
 
--- 获取 Mouse
-pcall(function()
-	mouse = player:GetMouse()
-end)
-
-print("[LuminaUI] 环境检测通过！")
-print("[LuminaUI] Player: " .. player.Name)
-print("[LuminaUI] PlayerGui: " .. tostring(playerGui ~= nil))
-
--- ==================== 第二步：销毁旧UI ====================
-print("[LuminaUI] 清理旧UI...")
-pcall(function()
-	local old = playerGui:FindFirstChild("LuminaUI")
-	if old then
-		old:Destroy()
-		wait(0.3)
-	end
-end)
-
--- ==================== 第三步：创建ScreenGui ====================
-print("[LuminaUI] 创建 ScreenGui...")
-
-local screenGui
-pcall(function()
-	screenGui = Instance.new("ScreenGui")
-	screenGui.Name = "LuminaUI"
-	screenGui.ResetOnSpawn = false
-	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	screenGui.DisplayOrder = 99999  -- 最高层级，确保不被遮挡
-	screenGui.Parent = playerGui
-end)
-
-if not screenGui then
-	print("[LuminaUI] 错误: 无法创建 ScreenGui")
-	return
+local function Tween(obj, props, dur, style, dir, cb)
+	if not env.Tween then return end
+	dur = dur or 0.3
+	local ti = TweenInfo.new(dur, style or Enum.EasingStyle.Quart, dir or Enum.EasingDirection.Out, 0, false, 0)
+	local tw = env.Tween:Create(obj, ti, props)
+	tw:Play()
+	if cb then tw.Completed:Connect(cb) end
+	return tw
 end
 
-print("[LuminaUI] ScreenGui 创建成功，DisplayOrder = 99999")
-
--- ==================== 第四步：创建主窗口 ====================
-print("[LuminaUI] 创建主窗口...")
-
-local mainFrame
-pcall(function()
-	mainFrame = Instance.new("Frame")
-	mainFrame.Name = "MainFrame"
-	mainFrame.Size = UDim2.new(0, 500, 0, 400)
-	mainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
-	mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-	mainFrame.BorderSizePixel = 0
-	mainFrame.ClipsDescendants = true
-	mainFrame.BackgroundTransparency = 0.05
-	mainFrame.Parent = screenGui
+-- ==================== 清理旧UI ====================
+safe(function()
+	local old = env.pgui:FindFirstChild("LuminaUI")
+	if old then old:Destroy(); wait(0.2) end
 end)
 
--- 圆角
-pcall(function()
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
-	corner.Parent = mainFrame
-end)
+-- ==================== ScreenGui ====================
+local sg = New("ScreenGui", {
+	Name = "LuminaUI",
+	ResetOnSpawn = false,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	DisplayOrder = 99999,
+}, env.pgui)
 
--- 描边
-pcall(function()
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(80, 140, 255)
-	stroke.Thickness = 1.5
-	stroke.Transparency = 0.4
-	stroke.Parent = mainFrame
-end)
+-- ==================== 主窗口背景 ====================
+local main = New("Frame", {
+	Name = "Main",
+	Size = UDim2.new(0, 520, 0, 440),
+	Position = UDim2.new(0.5, -260, 0.5, -220),
+	BackgroundColor3 = C.Bg,
+	BorderSizePixel = 0,
+	ClipsDescendants = true,
+	BackgroundTransparency = 0.04,
+}, sg)
+Corner(main, 14)
 
-print("[LuminaUI] 主窗口创建成功")
+-- 主窗口渐变边框
+Stroke(main, C.Accent, 1.5)
 
--- ==================== 第五步：标题栏 ====================
-print("[LuminaUI] 创建标题栏...")
+-- 顶部光晕装饰
+local glow = New("Frame", {
+	Size = UDim2.new(1, 0, 0, 2),
+	Position = UDim2.new(0, 0, 0, 0),
+	BackgroundColor3 = C.Accent,
+	BorderSizePixel = 0,
+	ZIndex = 10,
+}, main)
+Gradient(glow, C.Accent, C.Accent2, 90)
 
-local titleBar
-pcall(function()
-	titleBar = Instance.new("Frame")
-	titleBar.Name = "TitleBar"
-	titleBar.Size = UDim2.new(1, 0, 0, 40)
-	titleBar.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-	titleBar.BorderSizePixel = 0
-	titleBar.Parent = mainFrame
-end)
+-- ==================== 标题栏 ====================
+local titleBar = New("Frame", {
+	Name = "TitleBar",
+	Size = UDim2.new(1, 0, 0, 44),
+	BackgroundColor3 = C.Bg2,
+	BorderSizePixel = 0,
+}, main)
+Corner(titleBar, 14)
+-- 底部填充
+New("Frame", {
+	Size = UDim2.new(1, 0, 0, 14),
+	Position = UDim2.new(0, 0, 1, -14),
+	BackgroundColor3 = C.Bg2,
+	BorderSizePixel = 0,
+}, titleBar)
 
--- 标题栏圆角
-pcall(function()
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
-	corner.Parent = titleBar
-	-- 填充底部直角
-	local fill = Instance.new("Frame")
-	fill.Size = UDim2.new(1, 0, 0, 10)
-	fill.Position = UDim2.new(0, 0, 1, -10)
-	fill.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-	fill.BorderSizePixel = 0
-	fill.Parent = titleBar
-end)
+-- Logo 图标
+local logo = New("Frame", {
+	Size = UDim2.new(0, 28, 0, 28),
+	Position = UDim2.new(0, 14, 0.5, -14),
+	BackgroundColor3 = C.Accent,
+	BorderSizePixel = 0,
+}, titleBar)
+Corner(logo, 8)
+Gradient(logo, C.Accent, C.Accent2, 45)
 
--- 标题文字
-pcall(function()
-	local title = Instance.new("TextLabel")
-	title.Name = "Title"
-	title.Size = UDim2.new(1, -120, 1, 0)
-	title.Position = UDim2.new(0, 16, 0, 0)
-	title.BackgroundTransparency = 1
-	title.Font = Enum.Font.GothamBold
-	title.Text = "LuminaUI 交互系统"
-	title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	title.TextSize = 15
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.Parent = titleBar
-end)
+local logoText = New("TextLabel", {
+	Size = UDim2.new(1, 0, 1, 0),
+	BackgroundTransparency = 1,
+	Font = Enum.Font.GothamBold,
+	Text = "L",
+	TextColor3 = C.White,
+	TextSize = 16,
+}, logo)
 
--- 关闭按钮
-pcall(function()
-	local closeBtn = Instance.new("TextButton")
-	closeBtn.Name = "CloseBtn"
-	closeBtn.Size = UDim2.new(0, 28, 0, 28)
-	closeBtn.Position = UDim2.new(1, -36, 0, 6)
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-	closeBtn.Text = "X"
-	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeBtn.TextSize = 14
-	closeBtn.Font = Enum.Font.GothamBold
-	closeBtn.BorderSizePixel = 0
-	closeBtn.AutoButtonColor = false
-	closeBtn.Parent = titleBar
-
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 6)
-	btnCorner.Parent = closeBtn
-
-	-- 关闭事件
-	closeBtn.MouseButton1Click:Connect(function()
-		pcall(function()
-			-- 关闭动画
-			if TweenService then
-				local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 0)
-				local tween = TweenService:Create(mainFrame, tweenInfo, {
-					Size = UDim2.new(0, 0, 0, 0),
-					BackgroundTransparency = 1,
-				})
-				tween:Play()
-				tween.Completed:Connect(function()
-					screenGui:Destroy()
-				end)
-			else
-				screenGui:Destroy()
-			end
-		end)
-	end)
-
-	-- 悬停效果
-	closeBtn.MouseEnter:Connect(function()
-		pcall(function()
-			closeBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-		end)
-	end)
-	closeBtn.MouseLeave:Connect(function()
-		pcall(function()
-			closeBtn.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-		end)
-	end)
-end)
+-- 标题
+New("TextLabel", {
+	Size = UDim2.new(1, -130, 1, 0),
+	Position = UDim2.new(0, 50, 0, 0),
+	BackgroundTransparency = 1,
+	Font = Enum.Font.GothamBold,
+	Text = "LuminaUI",
+	TextColor3 = C.White,
+	TextSize = 15,
+	TextXAlignment = Enum.TextXAlignment.Left,
+}, titleBar)
 
 -- 最小化按钮
-pcall(function()
-	local minBtn = Instance.new("TextButton")
-	minBtn.Name = "MinBtn"
-	minBtn.Size = UDim2.new(0, 28, 0, 28)
-	minBtn.Position = UDim2.new(1, -68, 0, 6)
-	minBtn.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
-	minBtn.Text = "_"
-	minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	minBtn.TextSize = 14
-	minBtn.Font = Enum.Font.GothamBold
-	minBtn.BorderSizePixel = 0
-	minBtn.AutoButtonColor = false
-	minBtn.Parent = titleBar
+local minBtn = New("TextButton", {
+	Size = UDim2.new(0, 30, 0, 30),
+	Position = UDim2.new(1, -74, 0.5, -15),
+	BackgroundColor3 = Color3.fromRGB(255, 180, 50),
+	Text = "—",
+	TextColor3 = C.White,
+	TextSize = 14,
+	Font = Enum.Font.GothamBold,
+	BorderSizePixel = 0,
+	AutoButtonColor = false,
+}, titleBar)
+Corner(minBtn, 8)
 
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 6)
-	btnCorner.Parent = minBtn
+-- 关闭按钮
+local closeBtn = New("TextButton", {
+	Size = UDim2.new(0, 30, 0, 30),
+	Position = UDim2.new(1, -38, 0.5, -15),
+	BackgroundColor3 = Color3.fromRGB(255, 70, 80),
+	Text = "✕",
+	TextColor3 = C.White,
+	TextSize = 14,
+	Font = Enum.Font.GothamBold,
+	BorderSizePixel = 0,
+	AutoButtonColor = false,
+}, titleBar)
+Corner(closeBtn, 8)
 
-	local minimized = false
-	local originalSize = UDim2.new(0, 500, 0, 400)
+-- 关闭事件
+local minimized = false
+local origSize = UDim2.new(0, 520, 0, 440)
 
-	minBtn.MouseButton1Click:Connect(function()
-		minimized = not minimized
-		if minimized then
-			-- 最小化
-			if TweenService then
-				local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out, 0, false, 0)
-				local tween = TweenService:Create(mainFrame, tweenInfo, {
-					Size = UDim2.new(0, 500, 0, 40)
-				})
-				tween:Play()
-			else
-				mainFrame.Size = UDim2.new(0, 500, 0, 40)
-			end
-		else
-			-- 恢复
-			if TweenService then
-				local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out, 0, false, 0)
-				local tween = TweenService:Create(mainFrame, tweenInfo, {
-					Size = originalSize
-				})
-				tween:Play()
-			else
-				mainFrame.Size = originalSize
-			end
-		end
+closeBtn.MouseButton1Click:Connect(function()
+	Tween(main, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In, function()
+		sg:Destroy()
 	end)
 end)
 
-print("[LuminaUI] 标题栏创建成功")
-
--- ==================== 第六步：拖拽功能 ====================
-print("[LuminaUI] 添加拖拽功能...")
-
-pcall(function()
-	local dragging = false
-	local dragStart = nil
-	local winStart = nil
-
-	titleBar.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or
-		   input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			winStart = mainFrame.Position
-		end
-	end)
-
-	titleBar.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or
-		   input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
-
-	if UserInputService then
-		UserInputService.InputChanged:Connect(function(input)
-			if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or
-			   input.UserInputType == Enum.UserInputType.Touch) then
-				local delta = input.Position - dragStart
-				mainFrame.Position = UDim2.new(
-					winStart.X.Scale, winStart.X.Offset + delta.X,
-					winStart.Y.Scale, winStart.Y.Offset + delta.Y
-				)
-			end
-		end)
+minBtn.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	if minimized then
+		Tween(main, {Size = UDim2.new(0, 520, 0, 44)}, 0.3)
+	else
+		Tween(main, {Size = origSize}, 0.4, Enum.EasingStyle.Elastic)
 	end
 end)
 
--- ==================== 第七步：左侧导航栏 ====================
-print("[LuminaUI] 创建导航栏...")
+-- 按钮悬停
+for _, b in ipairs({closeBtn, minBtn}) do
+	b.MouseEnter:Connect(function()
+		local c = b.BackgroundColor3
+		Tween(b, {BackgroundColor3 = Color3.new(c.R * 0.8, c.G * 0.8, c.B * 0.8)}, 0.15)
+	end)
+	b.MouseLeave:Connect(function()
+		local c = b.BackgroundColor3
+		-- restore
+		if b == closeBtn then Tween(b, {BackgroundColor3 = Color3.fromRGB(255, 70, 80)}, 0.15)
+		else Tween(b, {BackgroundColor3 = Color3.fromRGB(255, 180, 50)}, 0.15) end
+	end)
+end
 
-local navFrame, rightFrame, pageContainer
-
-pcall(function()
-	-- 内容区
-	local contentFrame = Instance.new("Frame")
-	contentFrame.Name = "Content"
-	contentFrame.Size = UDim2.new(1, 0, 1, -40)
-	contentFrame.Position = UDim2.new(0, 0, 0, 40)
-	contentFrame.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-	contentFrame.BorderSizePixel = 0
-	contentFrame.Parent = mainFrame
-
-	-- 导航栏
-	navFrame = Instance.new("Frame")
-	navFrame.Name = "Nav"
-	navFrame.Size = UDim2.new(0, 140, 1, 0)
-	navFrame.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
-	navFrame.BorderSizePixel = 0
-	navFrame.Parent = contentFrame
-
-	local navCorner = Instance.new("UICorner")
-	navCorner.CornerRadius = UDim.new(0, 10)
-	navCorner.Parent = navFrame
-
-	-- 右侧内容区
-	rightFrame = Instance.new("Frame")
-	rightFrame.Name = "Right"
-	rightFrame.Size = UDim2.new(1, -150, 1, 0)
-	rightFrame.Position = UDim2.new(0, 150, 0, 0)
-	rightFrame.BackgroundTransparency = 1
-	rightFrame.BorderSizePixel = 0
-	rightFrame.Parent = contentFrame
-
-	-- 页面容器
-	pageContainer = Instance.new("Frame")
-	pageContainer.Name = "Pages"
-	pageContainer.Size = UDim2.new(1, 0, 1, 0)
-	pageContainer.BackgroundTransparency = 1
-	pageContainer.BorderSizePixel = 0
-	pageContainer.Parent = rightFrame
+-- ==================== 拖拽 ====================
+local dragging, dragStart, winStart = false, nil, nil
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		winStart = main.Position
+	end
 end)
-
-print("[LuminaUI] 导航栏创建成功")
-
--- ==================== 第八步：创建导航按钮 ====================
-local pages = {}
-local navButtons = {}
-
-local function createNavButton(name, index)
-	local btn
-	pcall(function()
-		btn = Instance.new("TextButton")
-		btn.Name = "Nav_" .. name
-		btn.Size = UDim2.new(1, -16, 0, 34)
-		btn.Position = UDim2.new(0, 8, 0, 8 + (index - 1) * 38)
-		btn.BackgroundColor3 = (index == 1) and Color3.fromRGB(42, 42, 54) or Color3.fromRGB(34, 34, 44)
-		btn.Text = "  " .. name
-		btn.TextColor3 = (index == 1) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(160, 160, 170)
-		btn.TextSize = 13
-		btn.Font = Enum.Font.Gotham
-		btn.TextXAlignment = Enum.TextXAlignment.Left
-		btn.BorderSizePixel = 0
-		btn.AutoButtonColor = false
-		btn.Parent = navFrame
-
-		local btnCorner = Instance.new("UICorner")
-		btnCorner.CornerRadius = UDim.new(0, 6)
-		btnCorner.Parent = btn
-
-		-- 左侧指示条
-		if index == 1 then
-			local indicator = Instance.new("Frame")
-			indicator.Name = "Indicator"
-			indicator.Size = UDim2.new(0, 3, 0, 20)
-			indicator.Position = UDim2.new(0, 0, 0.5, -10)
-			indicator.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
-			indicator.BorderSizePixel = 0
-			indicator.Parent = btn
-
-			local indCorner = Instance.new("UICorner")
-			indCorner.CornerRadius = UDim.new(0, 2)
-			indCorner.Parent = indicator
+titleBar.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+if env.UIS then
+	env.UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			main.Position = UDim2.new(winStart.X.Scale, winStart.X.Offset + delta.X, winStart.Y.Scale, winStart.Y.Offset + delta.Y)
 		end
+	end)
+end
+
+-- ==================== 内容区 ====================
+local content = New("Frame", {
+	Name = "Content",
+	Size = UDim2.new(1, 0, 1, -44),
+	Position = UDim2.new(0, 0, 0, 44),
+	BackgroundColor3 = C.Bg2,
+	BorderSizePixel = 0,
+}, main)
+
+-- ==================== 左侧导航 ====================
+local nav = New("Frame", {
+	Name = "Nav",
+	Size = UDim2.new(0, 150, 1, 0),
+	BackgroundColor3 = C.Bg,
+	BorderSizePixel = 0,
+}, content)
+
+-- 右侧页面区
+local pages = New("Frame", {
+	Name = "Pages",
+	Size = UDim2.new(1, -160, 1, 0),
+	Position = UDim2.new(0, 160, 0, 0),
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+}, content)
+
+-- 页面滚动
+local scroll = New("ScrollingFrame", {
+	Name = "Scroll",
+	Size = UDim2.new(1, -6, 1, 0),
+	Position = UDim2.new(0, 6, 0, 0),
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+	ScrollBarThickness = 3,
+	ScrollBarImageColor3 = C.Line,
+	CanvasSize = UDim2.new(0, 0, 0, 0),
+}, pages)
+
+local scrollLayout = New("UIListLayout", {
+	Padding = UDim.new(0, 10),
+	SortOrder = Enum.SortOrder.LayoutOrder,
+}, scroll)
+
+New("UIPadding", {
+	PaddingTop = UDim.new(0, 10),
+	PaddingRight = UDim.new(0, 6),
+	PaddingBottom = UDim.new(0, 20),
+}, scroll)
+
+-- ==================== 导航按钮 ====================
+local navBtns = {}
+local pageFrames = {}
+local curPage = nil
+
+local function makeNavBtn(name, icon, index)
+	local btn = New("TextButton", {
+		Name = name,
+		Size = UDim2.new(1, -20, 0, 38),
+		Position = UDim2.new(0, 10, 0, 10 + (index - 1) * 44),
+		BackgroundColor3 = (index == 1) and C.Card2 or C.Bg,
+		Text = "  " .. (icon or "") .. "  " .. name,
+		TextColor3 = (index == 1) and C.White or C.Gray,
+		TextSize = 13,
+		Font = Enum.Font.Gotham,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BorderSizePixel = 0,
+		AutoButtonColor = false,
+	}, nav)
+	Corner(btn, 10)
+
+	-- 选中指示条
+	if index == 1 then
+		local bar = New("Frame", {
+			Name = "Indicator",
+			Size = UDim2.new(0, 3, 0, 22),
+			Position = UDim2.new(0, 0, 0.5, -11),
+			BackgroundColor3 = C.Accent,
+			BorderSizePixel = 0,
+		}, btn)
+		Corner(bar, 2)
+		Gradient(bar, C.Accent, C.Accent2, 0)
+	end
+
+	table.insert(navBtns, btn)
+	return btn
+end
+
+local function switchPage(name)
+	curPage = name
+	for _, p in ipairs(pageFrames) do
+		p.Visible = (p.Name == name)
+		if p.Visible then Tween(p, {BackgroundTransparency = 0}, 0.2) end
+	end
+	for _, b in ipairs(navBtns) do
+		local isActive = (b.Name == name)
+		Tween(b, {
+			BackgroundColor3 = isActive and C.Card2 or C.Bg,
+			TextColor3 = isActive and C.White or C.Gray,
+		}, 0.2)
+		local ind = b:FindFirstChild("Indicator")
+		if isActive and not ind then
+			ind = New("Frame", {
+				Name = "Indicator",
+				Size = UDim2.new(0, 3, 0, 22),
+				Position = UDim2.new(0, 0, 0.5, -11),
+				BackgroundColor3 = C.Accent,
+				BorderSizePixel = 0,
+			}, b)
+			Corner(ind, 2)
+			Gradient(ind, C.Accent, C.Accent2, 0)
+		elseif not isActive and ind then
+			ind:Destroy()
+		end
+	end
+	scroll.CanvasSize = UDim2.new(0, 0, 0, scrollLayout.AbsoluteContentSize.Y + 10)
+end
+
+-- ==================== 创建页面 ====================
+local function makePage(name)
+	local p = New("Frame", {
+		Name = name,
+		Size = UDim2.new(1, 0, 0, 0),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Visible = (#pageFrames == 0),
+	}, scroll)
+	table.insert(pageFrames, p)
+	return p
+end
+
+-- ==================== 组件：Section ====================
+local function Section(parent, title)
+	local sec = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 0),
+		BackgroundColor3 = C.Card,
+		BorderSizePixel = 0,
+		BackgroundTransparency = 0.05,
+	}, parent)
+	Corner(sec, 12)
+	Stroke(sec, C.Line, 1)
+
+	-- 标题区
+	local hdr = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 34),
+		BackgroundColor3 = C.Card2,
+		BorderSizePixel = 0,
+	}, sec)
+	Corner(hdr, 12)
+	New("Frame", {
+		Size = UDim2.new(1, 0, 0, 12),
+		Position = UDim2.new(0, 0, 1, -12),
+		BackgroundColor3 = C.Card2,
+		BorderSizePixel = 0,
+	}, hdr)
+
+	-- 左侧色条
+	local bar = New("Frame", {
+		Size = UDim2.new(0, 3, 0, 18),
+		Position = UDim2.new(0, 0, 0.5, -9),
+		BackgroundColor3 = C.Accent,
+		BorderSizePixel = 0,
+	}, hdr)
+	Corner(bar, 2)
+	Gradient(bar, C.Accent, C.Accent2, 0)
+
+	New("TextLabel", {
+		Size = UDim2.new(1, -30, 1, 0),
+		Position = UDim2.new(0, 14, 0, 0),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold,
+		Text = title,
+		TextColor3 = C.White,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	}, hdr)
+
+	-- 内容区
+	local body = New("Frame", {
+		Name = "Body",
+		Size = UDim2.new(1, 0, 0, 0),
+		Position = UDim2.new(0, 0, 0, 38),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, sec)
+
+	local layout = New("UIListLayout", {
+		Padding = UDim.new(0, 4),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	}, body)
+
+	New("UIPadding", {
+		PaddingLeft = UDim.new(0, 14),
+		PaddingRight = UDim.new(0, 14),
+		PaddingTop = UDim.new(0, 6),
+		PaddingBottom = UDim.new(0, 10),
+	}, body)
+
+	return sec, body
+end
+
+-- ==================== 组件：Button ====================
+local function Button(parent, text, cb, opts)
+	opts = opts or {}
+	local btn = New("TextButton", {
+		Size = UDim2.new(1, 0, 0, 36),
+		BackgroundColor3 = opts.Color or C.Accent,
+		Text = text,
+		TextColor3 = C.White,
+		TextSize = 13,
+		Font = Enum.Font.GothamBold,
+		BorderSizePixel = 0,
+		AutoButtonColor = false,
+	}, parent)
+	Corner(btn, 8)
+	if not opts.NoGradient then Gradient(btn, opts.Color or C.Accent, opts.Color2 or C.Accent2, 90) end
+
+	local origColor = btn.BackgroundColor3
+	btn.MouseEnter:Connect(function()
+		Tween(btn, {Size = UDim2.new(1, 0, 0, 38)}, 0.12)
+	end)
+	btn.MouseLeave:Connect(function()
+		Tween(btn, {Size = UDim2.new(1, 0, 0, 36)}, 0.12)
+	end)
+	btn.MouseButton1Down:Connect(function()
+		Tween(btn, {Size = UDim2.new(1, -4, 0, 34)}, 0.06)
+	end)
+	btn.MouseButton1Up:Connect(function()
+		Tween(btn, {Size = UDim2.new(1, 0, 0, 36)}, 0.1)
+	end)
+	btn.MouseButton1Click:Connect(function()
+		-- 涟漪
+		pcall(function()
+			local ripple = New("Frame", {
+				Size = UDim2.new(0, 0, 0, 0),
+				Position = UDim2.new(0.5, 0, 0.5, 0),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundColor3 = C.White,
+				BackgroundTransparency = 0.5,
+				BorderSizePixel = 0,
+				ZIndex = 5,
+			}, btn)
+			Corner(ripple, 50)
+			Tween(ripple, {
+				Size = UDim2.new(0, 200, 0, 200),
+				BackgroundTransparency = 1,
+			}, 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, function() ripple:Destroy() end)
+		end)
+		if cb then cb() end
 	end)
 	return btn
 end
 
--- ==================== 第九步：创建页面内容 ====================
--- 主页
-local homePage
-pcall(function()
-	homePage = Instance.new("Frame")
-	homePage.Name = "主页"
-	homePage.Size = UDim2.new(1, 0, 1, 0)
-	homePage.BackgroundTransparency = 1
-	homePage.BorderSizePixel = 0
-	homePage.Visible = true
-	homePage.Parent = pageContainer
-end)
+-- ==================== 组件：Toggle ====================
+local function Toggle(parent, text, cb, default)
+	default = default or false
+	local enabled = default
 
--- 设置页
-local settingsPage
-pcall(function()
-	settingsPage = Instance.new("Frame")
-	settingsPage.Name = "设置"
-	settingsPage.Size = UDim2.new(1, 0, 1, 0)
-	settingsPage.BackgroundTransparency = 1
-	settingsPage.BorderSizePixel = 0
-	settingsPage.Visible = false
-	settingsPage.Parent = pageContainer
-end)
+	local container = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 36),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, parent)
 
--- 关于页
-local aboutPage
-pcall(function()
-	aboutPage = Instance.new("Frame")
-	aboutPage.Name = "关于"
-	aboutPage.Size = UDim2.new(1, 0, 1, 0)
-	aboutPage.BackgroundTransparency = 1
-	aboutPage.BorderSizePixel = 0
-	aboutPage.Visible = false
-	aboutPage.Parent = pageContainer
-end)
+	New("TextLabel", {
+		Size = UDim2.new(1, -60, 1, 0),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.Gotham,
+		Text = text,
+		TextColor3 = C.Gray,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	}, container)
 
--- 页面切换函数
-local function switchPage(pageName)
-	pcall(function()
-		-- 隐藏所有页面
-		for _, child in ipairs(pageContainer:GetChildren()) do
-			if child:IsA("Frame") then
-				child.Visible = false
-			end
+	local bg = New("Frame", {
+		Size = UDim2.new(0, 50, 0, 28),
+		Position = UDim2.new(1, -54, 0.5, -14),
+		BackgroundColor3 = C.Line,
+		BorderSizePixel = 0,
+	}, container)
+	Corner(bg, 14)
+
+	local knob = New("Frame", {
+		Size = UDim2.new(0, 22, 0, 22),
+		Position = UDim2.new(0, 3, 0, 3),
+		BackgroundColor3 = C.White,
+		BorderSizePixel = 0,
+		ZIndex = 2,
+	}, bg)
+	Corner(knob, 11)
+
+	local hit = New("TextButton", {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Text = "",
+		ZIndex = 10,
+	}, container)
+
+	local function update()
+		if enabled then
+			Tween(bg, {BackgroundColor3 = C.Green}, 0.25)
+			Tween(knob, {Position = UDim2.new(1, -25, 0, 3)}, 0.25)
+		else
+			Tween(bg, {BackgroundColor3 = C.Line}, 0.25)
+			Tween(knob, {Position = UDim2.new(0, 3, 0, 3)}, 0.25)
 		end
+	end
+	update()
 
-		-- 显示目标页面
-		local target = pageContainer:FindFirstChild(pageName)
-		if target then target.Visible = true end
+	hit.MouseButton1Click:Connect(function()
+		enabled = not enabled
+		update()
+		if cb then cb(enabled) end
+	end)
 
-		-- 更新导航按钮样式
-		for _, btn in ipairs(navFrame:GetChildren()) do
-			if btn:IsA("TextButton") then
-				local btnPageName = btn.Name:gsub("Nav_", "")
-				if btnPageName == pageName then
-					btn.BackgroundColor3 = Color3.fromRGB(42, 42, 54)
-					btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-					-- 添加指示条
-					if not btn:FindFirstChild("Indicator") then
-						local indicator = Instance.new("Frame")
-						indicator.Name = "Indicator"
-						indicator.Size = UDim2.new(0, 3, 0, 20)
-						indicator.Position = UDim2.new(0, 0, 0.5, -10)
-						indicator.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
-						indicator.BorderSizePixel = 0
-						indicator.Parent = btn
+	return {Get = function() return enabled end, Set = function(v) enabled = v; update() end}
+end
 
-						local indCorner = Instance.new("UICorner")
-						indCorner.CornerRadius = UDim.new(0, 2)
-						indCorner.Parent = indicator
-					end
-				else
-					btn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
-					btn.TextColor3 = Color3.fromRGB(160, 160, 170)
-					local indicator = btn:FindFirstChild("Indicator")
-					if indicator then indicator:Destroy() end
+-- ==================== 组件：Slider ====================
+local function Slider(parent, text, cb, opts)
+	opts = opts or {}
+	local min = opts.Min or 0
+	local max = opts.Max or 100
+	local val = opts.Default or 50
+
+	local container = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 52),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, parent)
+
+	-- 标签 + 数值
+	local labelRow = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 18),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, container)
+
+	New("TextLabel", {
+		Size = UDim2.new(0.7, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.Gotham,
+		Text = text,
+		TextColor3 = C.Gray,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	}, labelRow)
+
+	local valLabel = New("TextLabel", {
+		Size = UDim2.new(0.3, 0, 1, 0),
+		Position = UDim2.new(0.7, 0, 0, 0),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold,
+		Text = tostring(val),
+		TextColor3 = C.Accent,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Right,
+	}, labelRow)
+
+	-- 轨道
+	local track = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 8),
+		Position = UDim2.new(0, 0, 0, 26),
+		BackgroundColor3 = C.Line,
+		BorderSizePixel = 0,
+	}, container)
+	Corner(track, 4)
+
+	local fill = New("Frame", {
+		Size = UDim2.new((val - min) / (max - min), 0, 1, 0),
+		BackgroundColor3 = C.Accent,
+		BorderSizePixel = 0,
+	}, track)
+	Corner(fill, 4)
+	Gradient(fill, C.Accent, C.Accent2, 90)
+
+	local knob = New("Frame", {
+		Size = UDim2.new(0, 20, 0, 20),
+		Position = UDim2.new((val - min) / (max - min), -10, 0.5, -10),
+		BackgroundColor3 = C.White,
+		BorderSizePixel = 0,
+		ZIndex = 5,
+	}, track)
+	Corner(knob, 10)
+	Stroke(knob, C.Accent, 2)
+
+	local function setVal(x)
+		local ratio = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+		val = math.floor(min + ratio * (max - min) + 0.5)
+		val = math.clamp(val, min, max)
+		ratio = (val - min) / (max - min)
+		fill.Size = UDim2.new(ratio, 0, 1, 0)
+		knob.Position = UDim2.new(ratio, -10, 0.5, -10)
+		valLabel.Text = tostring(val)
+		if cb then cb(val) end
+	end
+
+	local dragging = false
+	knob.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+		end
+	end)
+	knob.InputEnded:Connect(function() dragging = false end)
+	track.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			setVal(i.Position.X)
+		end
+	end)
+	track.InputEnded:Connect(function() dragging = false end)
+	if env.UIS then
+		env.UIS.InputChanged:Connect(function(i)
+			if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+				if env.mouse then setVal(env.mouse.X) end
+			end
+		end)
+	end
+
+	return {Get = function() return val end, Set = function(v) val = math.clamp(v, min, max); local r = (val - min) / (max - min); fill.Size = UDim2.new(r, 0, 1, 0); knob.Position = UDim2.new(r, -10, 0.5, -10); valLabel.Text = tostring(val) end}
+end
+
+-- ==================== 组件：Dropdown ====================
+local function Dropdown(parent, text, options, cb, opts)
+	opts = opts or {}
+	local selected = opts.Default or options[1]
+	local expanded = false
+
+	local container = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 0),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, parent)
+
+	New("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 18),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.Gotham,
+		Text = text,
+		TextColor3 = C.Gray,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	}, container)
+
+	local header = New("TextButton", {
+		Size = UDim2.new(1, 0, 0, 34),
+		Position = UDim2.new(0, 0, 0, 22),
+		BackgroundColor3 = C.Card2,
+		Text = selected,
+		TextColor3 = C.White,
+		TextSize = 13,
+		Font = Enum.Font.Gotham,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BorderSizePixel = 0,
+		AutoButtonColor = false,
+	}, container)
+	Corner(header, 8)
+	New("UIPadding", {PaddingLeft = UDim.new(0, 12)}, header)
+
+	-- 箭头
+	local arrow = New("TextLabel", {
+		Size = UDim2.new(0, 20, 1, 0),
+		Position = UDim2.new(1, -24, 0, 0),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold,
+		Text = "▾",
+		TextColor3 = C.Gray,
+		TextSize = 10,
+	}, header)
+
+	-- 选项列表
+	local list = New("Frame", {
+		Name = "List",
+		Size = UDim2.new(1, 0, 0, 0),
+		Position = UDim2.new(0, 0, 0, 60),
+		BackgroundColor3 = C.Card2,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Visible = false,
+	}, container)
+	Corner(list, 8)
+	Stroke(list, C.Line, 1)
+
+	New("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder}, list)
+
+	for _, opt in ipairs(options) do
+		local ob = New("TextButton", {
+			Name = opt,
+			Size = UDim2.new(1, 0, 0, 30),
+			BackgroundColor3 = (opt == selected) and C.Card or C.Card2,
+			Text = opt,
+			TextColor3 = C.White,
+			TextSize = 12,
+			Font = Enum.Font.Gotham,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			BorderSizePixel = 0,
+			AutoButtonColor = false,
+		}, list)
+		New("UIPadding", {PaddingLeft = UDim.new(0, 12)}, ob)
+
+		ob.MouseEnter:Connect(function()
+			Tween(ob, {BackgroundColor3 = C.Card}, 0.1)
+		end)
+		ob.MouseLeave:Connect(function()
+			if opt ~= selected then Tween(ob, {BackgroundColor3 = C.Card2}, 0.1) end
+		end)
+		ob.MouseButton1Click:Connect(function()
+			selected = opt
+			header.Text = opt
+			-- 更新高亮
+			for _, c in ipairs(list:GetChildren()) do
+				if c:IsA("TextButton") then
+					Tween(c, {BackgroundColor3 = (c.Name == opt) and C.Card or C.Card2}, 0.2)
 				end
 			end
+			expanded = false
+			Tween(list, {Size = UDim2.new(1, 0, 0, 0)}, 0.2, nil, nil, function() list.Visible = false end)
+			Tween(arrow, {Rotation = 0}, 0.2)
+			if cb then cb(opt) end
+		end)
+	end
+
+	header.MouseButton1Click:Connect(function()
+		expanded = not expanded
+		if expanded then
+			list.Visible = true
+			list.Size = UDim2.new(1, 0, 0, 0)
+			Tween(list, {Size = UDim2.new(1, 0, 0, 30 * #options)}, 0.25)
+			Tween(arrow, {Rotation = 180}, 0.25)
+		else
+			Tween(list, {Size = UDim2.new(1, 0, 0, 0)}, 0.2, nil, nil, function() list.Visible = false end)
+			Tween(arrow, {Rotation = 0}, 0.2)
 		end
+	end)
+
+	return {Get = function() return selected end, Set = function(v) selected = v; header.Text = v end}
+end
+
+-- ==================== 通知 Toast ====================
+local function Toast(title, msg, duration, color)
+	duration = duration or 3
+	color = color or C.Accent
+
+	local toast = New("Frame", {
+		Name = "Toast",
+		Size = UDim2.new(0, 0, 0, 0),
+		Position = UDim2.new(1, 0, 0, 16),
+		AnchorPoint = Vector2.new(1, 0),
+		BackgroundColor3 = C.Card,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		ZIndex = 999,
+		BackgroundTransparency = 0.05,
+	}, sg)
+	Corner(toast, 10)
+	Stroke(toast, color, 1.5)
+
+	-- 左侧色条
+	local bar = New("Frame", {
+		Size = UDim2.new(0, 3, 1, 0),
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+	}, toast)
+	Gradient(bar, color, C.Accent2, 0)
+
+	New("TextLabel", {
+		Size = UDim2.new(1, -36, 0, 18),
+		Position = UDim2.new(0, 14, 0, 8),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold,
+		Text = title,
+		TextColor3 = C.White,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	}, toast)
+
+	New("TextLabel", {
+		Size = UDim2.new(1, -36, 0, 16),
+		Position = UDim2.new(0, 14, 0, 26),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.Gotham,
+		Text = msg,
+		TextColor3 = C.Gray,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	}, toast)
+
+	-- 进度条
+	local prog = New("Frame", {
+		Size = UDim2.new(1, 0, 0, 2),
+		Position = UDim2.new(0, 0, 1, -2),
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+	}, toast)
+
+	-- 入场
+	toast.Size = UDim2.new(0, 280, 0, 52)
+	Tween(prog, {Size = UDim2.new(0, 0, 0, 2)}, duration, Enum.EasingStyle.Linear)
+
+	-- 自动关闭
+	delay(duration, function()
+		pcall(function()
+			Tween(toast, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}, 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In, function()
+				toast:Destroy()
+			end)
+		end)
+	end)
+
+	return toast
+end
+
+-- ==================== 构建页面 ====================
+
+-- ---- 主页 ----
+local homePage = makePage("主页")
+
+local s1, b1 = Section(homePage, "欢迎回来")
+s1.Size = UDim2.new(1, 0, 0, 56)
+
+New("TextLabel", {
+	Size = UDim2.new(1, 0, 0, 36),
+	BackgroundTransparency = 1,
+	Font = Enum.Font.Gotham,
+	Text = "LuminaUI v2.0 已就绪\n所有组件均可交互，尽情体验",
+	TextColor3 = C.Gray,
+	TextSize = 12,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextWrapped = true,
+}, b1)
+
+local s2, b2 = Section(homePage, "快速操作")
+s2.Size = UDim2.new(1, 0, 0, 100)
+
+Button(b2, "发送成功通知", function()
+	Toast("操作成功", "任务已完成！", 3, C.Green)
+end, {Color = C.Green, Color2 = Color3.fromRGB(40, 200, 100)})
+
+Button(b2, "发送警告通知", function()
+	Toast("请注意", "这是一个警告信息", 3, C.Orange)
+end, {Color = C.Orange, Color2 = Color3.fromRGB(255, 140, 30)})
+
+-- ---- 设置页 ----
+local setPage = makePage("设置")
+
+local s3, b3 = Section(setPage, "功能开关")
+s3.Size = UDim2.new(1, 0, 0, 100)
+
+Toggle(b3, "自动瞄准", function(v)
+	Toast("设置", "自动瞄准: " .. (v and "开启" or "关闭"), 2, v and C.Green or C.Gray)
+end)
+
+Toggle(b3, "ESP 透视", function(v)
+	Toast("设置", "ESP透视: " .. (v and "开启" or "关闭"), 2, v and C.Green or C.Gray)
+end)
+
+local s4, b4 = Section(setPage, "参数调节")
+s4.Size = UDim2.new(1, 0, 0, 75)
+
+Slider(b4, "移动速度", function(v) end, {Min = 1, Max = 100, Default = 50})
+
+local s5, b5 = Section(setPage, "高级选项")
+s5.Size = UDim2.new(1, 0, 0, 75)
+
+Dropdown(b5, "选择武器", {"手枪", "步枪", "狙击枪", "霰弹枪", "冲锋枪"}, function(v)
+	Toast("武器", "已选择: " .. v, 2)
+end)
+
+-- ---- 关于页 ----
+local aboutPage = makePage("关于")
+
+local s6, b6 = Section(aboutPage, "关于 LuminaUI")
+s6.Size = UDim2.new(1, 0, 0, 100)
+
+New("TextLabel", {
+	Size = UDim2.new(1, 0, 0, 80),
+	BackgroundTransparency = 1,
+	Font = Enum.Font.Gotham,
+	Text = "LuminaUI v2.0\n\n玻璃拟态 · 渐变光效 · 流畅动画\n为 Roblox 注入器打造的现代化 UI 库\n\n组件: 按钮 · 开关 · 滑块 · 下拉菜单",
+	TextColor3 = C.Gray,
+	TextSize = 12,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextWrapped = true,
+}, b6)
+
+-- ==================== 导航按钮 ====================
+local nav1 = makeNavBtn("主页", "🏠", 1)
+local nav2 = makeNavBtn("设置", "⚙", 2)
+local nav3 = makeNavBtn("关于", "ℹ", 3)
+
+nav1.MouseButton1Click:Connect(function() switchPage("主页") end)
+nav2.MouseButton1Click:Connect(function() switchPage("设置") end)
+nav3.MouseButton1Click:Connect(function() switchPage("关于") end)
+
+for _, b in ipairs({nav1, nav2, nav3}) do
+	b.MouseEnter:Connect(function()
+		if curPage ~= b.Name then Tween(b, {BackgroundColor3 = C.Card}, 0.15) end
+	end)
+	b.MouseLeave:Connect(function()
+		if curPage ~= b.Name then Tween(b, {BackgroundColor3 = C.Bg}, 0.15) end
 	end)
 end
 
--- 创建导航按钮
-local navHome = createNavButton("主页", 1)
-local navSettings = createNavButton("设置", 2)
-local navAbout = createNavButton("关于", 3)
+curPage = "主页"
 
-navHome.MouseButton1Click:Connect(function() switchPage("主页") end)
-navSettings.MouseButton1Click:Connect(function() switchPage("设置") end)
-navAbout.MouseButton1Click:Connect(function() switchPage("关于") end)
+-- ==================== 入场动画 ====================
+main.Size = UDim2.new(0, 0, 0, 0)
+main.BackgroundTransparency = 0.6
+Tween(main, {
+	Size = UDim2.new(0, 520, 0, 440),
+	BackgroundTransparency = 0.04,
+}, 0.5, Enum.EasingStyle.Back)
 
--- 导航按钮悬停效果
-for _, btn in ipairs({navHome, navSettings, navAbout}) do
-	btn.MouseEnter:Connect(function()
-		local pageName = btn.Name:gsub("Nav_", "")
-		local currentVisible = nil
-		for _, child in ipairs(pageContainer:GetChildren()) do
-			if child:IsA("Frame") and child.Visible then
-				currentVisible = child.Name
-				break
-			end
-		end
-		if pageName ~= currentVisible then
-			btn.BackgroundColor3 = Color3.fromRGB(42, 42, 54)
-		end
+-- 欢迎通知
+delay(0.6, function()
+	pcall(function()
+		Toast("欢迎", "LuminaUI v2.0 已启动", 4, C.Accent)
 	end)
-	btn.MouseLeave:Connect(function()
-		local pageName = btn.Name:gsub("Nav_", "")
-		local currentVisible = nil
-		for _, child in ipairs(pageContainer:GetChildren()) do
-			if child:IsA("Frame") and child.Visible then
-				currentVisible = child.Name
-				break
-			end
-		end
-		if pageName ~= currentVisible then
-			btn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
-		end
-	end)
-end
-
--- ==================== 第十步：填充主页内容 ====================
-print("[LuminaUI] 创建UI组件...")
-
--- 辅助函数：创建分区
-local function createSection(parent, title, yPos)
-	local section = Instance.new("Frame")
-	section.Name = "Section_" .. title
-	section.Size = UDim2.new(1, -20, 0, 0)
-	section.Position = UDim2.new(0, 10, 0, yPos)
-	section.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-	section.BorderSizePixel = 0
-	section.Parent = parent
-
-	local secCorner = Instance.new("UICorner")
-	secCorner.CornerRadius = UDim.new(0, 8)
-	secCorner.Parent = section
-
-	-- 标题
-	local titleBar = Instance.new("Frame")
-	titleBar.Size = UDim2.new(1, 0, 0, 30)
-	titleBar.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
-	titleBar.BorderSizePixel = 0
-	titleBar.Parent = section
-
-	local titleCorner = Instance.new("UICorner")
-	titleCorner.CornerRadius = UDim.new(0, 8)
-	titleCorner.Parent = titleBar
-
-	local fill = Instance.new("Frame")
-	fill.Size = UDim2.new(1, 0, 0, 8)
-	fill.Position = UDim2.new(0, 0, 1, -8)
-	fill.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
-	fill.BorderSizePixel = 0
-	fill.Parent = titleBar
-
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(1, -20, 1, 0)
-	titleLabel.Position = UDim2.new(0, 12, 0, 0)
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Font = Enum.Font.GothamBold
-	titleLabel.Text = title
-	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	titleLabel.TextSize = 13
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.Parent = titleBar
-
-	-- 内容区
-	local content = Instance.new("Frame")
-	content.Name = "Content"
-	content.Size = UDim2.new(1, 0, 0, 0)
-	content.Position = UDim2.new(0, 0, 0, 34)
-	content.BackgroundTransparency = 1
-	content.BorderSizePixel = 0
-	content.Parent = section
-
-	return section, content
-end
-
--- 主页：欢迎区
-local welcomeSection, welcomeContent = createSection(homePage, "欢迎使用 LuminaUI", 10)
-welcomeSection.Size = UDim2.new(1, -20, 0, 80)
-
--- 欢迎文字
-local welcomeText = Instance.new("TextLabel")
-welcomeText.Size = UDim2.new(1, -20, 0, 40)
-welcomeText.Position = UDim2.new(0, 10, 0, 0)
-welcomeText.BackgroundTransparency = 1
-welcomeText.Font = Enum.Font.Gotham
-welcomeText.Text = "这是一个功能完整的UI交互系统演示\n包含按钮、开关、滑块、下拉菜单等组件"
-welcomeText.TextColor3 = Color3.fromRGB(160, 160, 170)
-welcomeText.TextSize = 12
-welcomeText.TextXAlignment = Enum.TextXAlignment.Left
-welcomeText.TextWrapped = true
-welcomeText.Parent = welcomeContent
-
--- 主页：按钮演示
-local btnSection, btnContent = createSection(homePage, "按钮演示", 100)
-btnSection.Size = UDim2.new(1, -20, 0, 120)
-
--- 普通按钮
-local btn1 = Instance.new("TextButton")
-btn1.Size = UDim2.new(1, -20, 0, 34)
-btn1.Position = UDim2.new(0, 10, 0, 5)
-btn1.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
-btn1.Text = "点击发送通知"
-btn1.TextColor3 = Color3.fromRGB(255, 255, 255)
-btn1.TextSize = 13
-btn1.Font = Enum.Font.GothamBold
-btn1.BorderSizePixel = 0
-btn1.AutoButtonColor = false
-btn1.Parent = btnContent
-
-local btn1Corner = Instance.new("UICorner")
-btn1Corner.CornerRadius = UDim.new(0, 6)
-btn1Corner.Parent = btn1
-
-btn1.MouseEnter:Connect(function()
-	btn1.BackgroundColor3 = Color3.fromRGB(100, 160, 255)
-end)
-btn1.MouseLeave:Connect(function()
-	btn1.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
-end)
-btn1.MouseButton1Click:Connect(function()
-	print("[LuminaUI] 按钮被点击了！")
-end)
-
--- 危险按钮
-local btn2 = Instance.new("TextButton")
-btn2.Size = UDim2.new(1, -20, 0, 34)
-btn2.Position = UDim2.new(0, 10, 0, 45)
-btn2.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-btn2.Text = "危险操作按钮"
-btn2.TextColor3 = Color3.fromRGB(255, 255, 255)
-btn2.TextSize = 13
-btn2.Font = Enum.Font.GothamBold
-btn2.BorderSizePixel = 0
-btn2.AutoButtonColor = false
-btn2.Parent = btnContent
-
-local btn2Corner = Instance.new("UICorner")
-btn2Corner.CornerRadius = UDim.new(0, 6)
-btn2Corner.Parent = btn2
-
-btn2.MouseEnter:Connect(function()
-	btn2.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-end)
-btn2.MouseLeave:Connect(function()
-	btn2.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-end)
-btn2.MouseButton1Click:Connect(function()
-	print("[LuminaUI] 危险按钮被点击！")
-end)
-
--- ==================== 第十一步：填充设置页内容 ====================
--- 设置页：开关
-local toggleSection, toggleContent = createSection(settingsPage, "开关设置", 10)
-toggleSection.Size = UDim2.new(1, -20, 0, 130)
-
--- 开关1：自动瞄准
-local toggle1Container = Instance.new("Frame")
-toggle1Container.Size = UDim2.new(1, -20, 0, 36)
-toggle1Container.Position = UDim2.new(0, 10, 0, 5)
-toggle1Container.BackgroundTransparency = 1
-toggle1Container.BorderSizePixel = 0
-toggle1Container.Parent = toggleContent
-
-local toggle1Label = Instance.new("TextLabel")
-toggle1Label.Size = UDim2.new(1, -60, 1, 0)
-toggle1Label.BackgroundTransparency = 1
-toggle1Label.Font = Enum.Font.Gotham
-toggle1Label.Text = "自动瞄准"
-toggle1Label.TextColor3 = Color3.fromRGB(160, 160, 170)
-toggle1Label.TextSize = 13
-toggle1Label.TextXAlignment = Enum.TextXAlignment.Left
-toggle1Label.Parent = toggle1Container
-
-local toggle1Bg = Instance.new("Frame")
-toggle1Bg.Size = UDim2.new(0, 48, 0, 26)
-toggle1Bg.Position = UDim2.new(1, -52, 0.5, -13)
-toggle1Bg.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-toggle1Bg.BorderSizePixel = 0
-toggle1Bg.Parent = toggle1Container
-
-local toggle1BgCorner = Instance.new("UICorner")
-toggle1BgCorner.CornerRadius = UDim.new(0, 13)
-toggle1BgCorner.Parent = toggle1Bg
-
-local toggle1Knob = Instance.new("Frame")
-toggle1Knob.Size = UDim2.new(0, 20, 0, 20)
-toggle1Knob.Position = UDim2.new(0, 3, 0, 3)
-toggle1Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-toggle1Knob.BorderSizePixel = 0
-toggle1Knob.Parent = toggle1Bg
-
-local toggle1KnobCorner = Instance.new("UICorner")
-toggle1KnobCorner.CornerRadius = UDim.new(0, 10)
-toggle1KnobCorner.Parent = toggle1Knob
-
-local toggle1Enabled = false
-local toggle1Btn = Instance.new("TextButton")
-toggle1Btn.Size = UDim2.new(1, 0, 1, 0)
-toggle1Btn.BackgroundTransparency = 1
-toggle1Btn.Text = ""
-toggle1Btn.ZIndex = 10
-toggle1Btn.Parent = toggle1Container
-
-toggle1Btn.MouseButton1Click:Connect(function()
-	toggle1Enabled = not toggle1Enabled
-	if toggle1Enabled then
-		toggle1Bg.BackgroundColor3 = Color3.fromRGB(50, 220, 120)
-		toggle1Knob.Position = UDim2.new(1, -23, 0, 3)
-	else
-		toggle1Bg.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-		toggle1Knob.Position = UDim2.new(0, 3, 0, 3)
-	end
-	print("[LuminaUI] 自动瞄准: " .. tostring(toggle1Enabled))
-end)
-
--- 开关2：ESP透视
-local toggle2Container = Instance.new("Frame")
-toggle2Container.Size = UDim2.new(1, -20, 0, 36)
-toggle2Container.Position = UDim2.new(0, 10, 0, 45)
-toggle2Container.BackgroundTransparency = 1
-toggle2Container.BorderSizePixel = 0
-toggle2Container.Parent = toggleContent
-
-local toggle2Label = Instance.new("TextLabel")
-toggle2Label.Size = UDim2.new(1, -60, 1, 0)
-toggle2Label.BackgroundTransparency = 1
-toggle2Label.Font = Enum.Font.Gotham
-toggle2Label.Text = "ESP 透视"
-toggle2Label.TextColor3 = Color3.fromRGB(160, 160, 170)
-toggle2Label.TextSize = 13
-toggle2Label.TextXAlignment = Enum.TextXAlignment.Left
-toggle2Label.Parent = toggle2Container
-
-local toggle2Bg = Instance.new("Frame")
-toggle2Bg.Size = UDim2.new(0, 48, 0, 26)
-toggle2Bg.Position = UDim2.new(1, -52, 0.5, -13)
-toggle2Bg.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-toggle2Bg.BorderSizePixel = 0
-toggle2Bg.Parent = toggle2Container
-
-local toggle2BgCorner = Instance.new("UICorner")
-toggle2BgCorner.CornerRadius = UDim.new(0, 13)
-toggle2BgCorner.Parent = toggle2Bg
-
-local toggle2Knob = Instance.new("Frame")
-toggle2Knob.Size = UDim2.new(0, 20, 0, 20)
-toggle2Knob.Position = UDim2.new(0, 3, 0, 3)
-toggle2Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-toggle2Knob.BorderSizePixel = 0
-toggle2Knob.Parent = toggle2Bg
-
-local toggle2KnobCorner = Instance.new("UICorner")
-toggle2KnobCorner.CornerRadius = UDim.new(0, 10)
-toggle2KnobCorner.Parent = toggle2Knob
-
-local toggle2Enabled = false
-local toggle2Btn = Instance.new("TextButton")
-toggle2Btn.Size = UDim2.new(1, 0, 1, 0)
-toggle2Btn.BackgroundTransparency = 1
-toggle2Btn.Text = ""
-toggle2Btn.ZIndex = 10
-toggle2Btn.Parent = toggle2Container
-
-toggle2Btn.MouseButton1Click:Connect(function()
-	toggle2Enabled = not toggle2Enabled
-	if toggle2Enabled then
-		toggle2Bg.BackgroundColor3 = Color3.fromRGB(50, 220, 120)
-		toggle2Knob.Position = UDim2.new(1, -23, 0, 3)
-	else
-		toggle2Bg.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-		toggle2Knob.Position = UDim2.new(0, 3, 0, 3)
-	end
-	print("[LuminaUI] ESP透视: " .. tostring(toggle2Enabled))
-end)
-
--- 设置页：滑块
-local sliderSection, sliderContent = createSection(settingsPage, "滑块设置", 150)
-sliderSection.Size = UDim2.new(1, -20, 0, 85)
-
--- 滑块1：移动速度
-local slider1Container = Instance.new("Frame")
-slider1Container.Size = UDim2.new(1, -20, 0, 50)
-slider1Container.Position = UDim2.new(0, 10, 0, 5)
-slider1Container.BackgroundTransparency = 1
-slider1Container.BorderSizePixel = 0
-slider1Container.Parent = sliderContent
-
-local slider1Label = Instance.new("TextLabel")
-slider1Label.Size = UDim2.new(0.7, 0, 0, 20)
-slider1Label.BackgroundTransparency = 1
-slider1Label.Font = Enum.Font.Gotham
-slider1Label.Text = "移动速度"
-slider1Label.TextColor3 = Color3.fromRGB(160, 160, 170)
-slider1Label.TextSize = 13
-slider1Label.TextXAlignment = Enum.TextXAlignment.Left
-slider1Label.Parent = slider1Container
-
-local slider1Value = Instance.new("TextLabel")
-slider1Value.Size = UDim2.new(0.3, 0, 0, 20)
-slider1Value.Position = UDim2.new(0.7, 0, 0, 0)
-slider1Value.BackgroundTransparency = 1
-slider1Value.Font = Enum.Font.GothamBold
-slider1Value.Text = "50"
-slider1Value.TextColor3 = Color3.fromRGB(80, 140, 255)
-slider1Value.TextSize = 13
-slider1Value.TextXAlignment = Enum.TextXAlignment.Right
-slider1Value.Parent = slider1Container
-
-local slider1Track = Instance.new("Frame")
-slider1Track.Size = UDim2.new(1, 0, 0, 6)
-slider1Track.Position = UDim2.new(0, 0, 0, 28)
-slider1Track.BackgroundColor3 = Color3.fromRGB(42, 42, 54)
-slider1Track.BorderSizePixel = 0
-slider1Track.Parent = slider1Container
-
-local slider1TrackCorner = Instance.new("UICorner")
-slider1TrackCorner.CornerRadius = UDim.new(0, 3)
-slider1TrackCorner.Parent = slider1Track
-
-local slider1Fill = Instance.new("Frame")
-slider1Fill.Size = UDim2.new(0.5, 0, 1, 0)
-slider1Fill.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
-slider1Fill.BorderSizePixel = 0
-slider1Fill.Parent = slider1Track
-
-local slider1FillCorner = Instance.new("UICorner")
-slider1FillCorner.CornerRadius = UDim.new(0, 3)
-slider1FillCorner.Parent = slider1Fill
-
-local slider1Knob = Instance.new("Frame")
-slider1Knob.Size = UDim2.new(0, 18, 0, 18)
-slider1Knob.Position = UDim2.new(0.5, -9, 0.5, -9)
-slider1Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-slider1Knob.BorderSizePixel = 0
-slider1Knob.ZIndex = 5
-slider1Knob.Parent = slider1Track
-
-local slider1KnobCorner = Instance.new("UICorner")
-slider1KnobCorner.CornerRadius = UDim.new(0, 9)
-slider1KnobCorner.Parent = slider1Knob
-
--- 滑块拖拽
-local slider1Dragging = false
-slider1Knob.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or
-	   input.UserInputType == Enum.UserInputType.Touch then
-		slider1Dragging = true
-	end
-end)
-slider1Knob.InputEnded:Connect(function(input)
-	slider1Dragging = false
-end)
-slider1Track.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or
-	   input.UserInputType == Enum.UserInputType.Touch then
-		slider1Dragging = true
-		local trackAbs = slider1Track.AbsolutePosition.X
-		local trackWidth = slider1Track.AbsoluteSize.X
-		local ratio = math.clamp((input.Position.X - trackAbs) / trackWidth, 0, 1)
-		slider1Fill.Size = UDim2.new(ratio, 0, 1, 0)
-		slider1Knob.Position = UDim2.new(ratio, -9, 0.5, -9)
-		local val = math.floor(ratio * 100)
-		slider1Value.Text = tostring(val)
-	end
-end)
-slider1Track.InputEnded:Connect(function()
-	slider1Dragging = false
-end)
-
-if UserInputService then
-	UserInputService.InputChanged:Connect(function(input)
-		if slider1Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or
-		   input.UserInputType == Enum.UserInputType.Touch) then
-			if mouse then
-				local trackAbs = slider1Track.AbsolutePosition.X
-				local trackWidth = slider1Track.AbsoluteSize.X
-				local ratio = math.clamp((mouse.X - trackAbs) / trackWidth, 0, 1)
-				slider1Fill.Size = UDim2.new(ratio, 0, 1, 0)
-				slider1Knob.Position = UDim2.new(ratio, -9, 0.5, -9)
-				local val = math.floor(ratio * 100)
-				slider1Value.Text = tostring(val)
-			end
-		end
-	end)
-end
-
--- ==================== 第十二步：填充关于页内容 ====================
-local aboutSection, aboutContent = createSection(aboutPage, "关于 LuminaUI", 10)
-aboutSection.Size = UDim2.new(1, -20, 0, 120)
-
-local aboutInfo = Instance.new("TextLabel")
-aboutInfo.Size = UDim2.new(1, -20, 0, 80)
-aboutInfo.Position = UDim2.new(0, 10, 0, 5)
-aboutInfo.BackgroundTransparency = 1
-aboutInfo.Font = Enum.Font.Gotham
-aboutInfo.Text = "LuminaUI v1.0\n\n一个为 Roblox 注入器设计的\n纯代码 UI 交互系统\n\n支持: 按钮 · 开关 · 滑块\n      拖拽 · 动画 · 页面切换"
-aboutInfo.TextColor3 = Color3.fromRGB(160, 160, 170)
-aboutInfo.TextSize = 12
-aboutInfo.TextXAlignment = Enum.TextXAlignment.Left
-aboutInfo.TextWrapped = true
-aboutInfo.Parent = aboutContent
-
--- ==================== 第十三步：入场动画 + 完成 ====================
-print("[LuminaUI] 播放入场动画...")
-
--- 弹入动画
-pcall(function()
-	if TweenService then
-		-- 先缩小到0
-		mainFrame.Size = UDim2.new(0, 0, 0, 0)
-		mainFrame.BackgroundTransparency = 0.5
-
-		local tweenInfo = TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, 0)
-		local tween = TweenService:Create(mainFrame, tweenInfo, {
-			Size = UDim2.new(0, 500, 0, 400),
-			BackgroundTransparency = 0.05,
-		})
-		tween:Play()
-		print("[LuminaUI] 入场动画播放中...")
-	else
-		print("[LuminaUI] TweenService 不可用，跳过动画")
-	end
 end)
 
 print("========================================")
-print(" LuminaUI 独立版 - 加载完成！")
-print(" 界面应该已经显示在屏幕中央")
-print(" 如果看不到，请检查:")
-print(" 1. 是否有其他UI遮挡 (DisplayOrder = 99999)")
-print(" 2. 注入器是否支持 ScreenGui")
-print(" 3. PlayerGui 是否正常加载")
+print(" LuminaUI v2.0 加载完成！")
+print(" 玻璃拟态 · 渐变光效 · 流畅动画")
+print(" DisplayOrder: 99999")
 print("========================================")
