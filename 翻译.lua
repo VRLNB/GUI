@@ -1,615 +1,438 @@
 --[[
-	GoogleTranslate - Roblox 注入器翻译模块 (Google 公开接口)
-	
-	适配所有主流注入器（Synapse X / Krnl / ScriptWare / Delta / Fluxus 等）
-	使用 Google 翻译公开 API，无需 API Key，支持 100+ 种语言互译。
-	
-	API 端点:
-	  https://translate.googleapis.com/translate_a/single?client=gtx&sl={源语言}&tl={目标语言}&dt=t&q={文本}
-	
-	作者: TRAE
-	版本: 2.0.0 (注入器适配版)
+	Roblox 翻译面板 - 注入器通用版
+	一个带开关按钮的浮动 UI，开启后自动翻译当前游戏界面中的所有英文文本
+	使用 Google 翻译公开接口，无需 API Key
 ]]
 
--- ==================== 环境检测 & 适配层 ====================
-
-local function detectEnvironment()
-	local env = {
-		httpGet = nil,      -- HTTP GET 请求函数
-		jsonDecode = nil,   -- JSON 解析函数
-		jsonEncode = nil,   -- JSON 编码函数
-		urlEncode = nil,    -- URL 编码函数
-		executorName = "Unknown",
-		isReady = false,
-	}
-
-	-- 1. 检测 HTTP 请求函数（按优先级）
-	-- syn.request (Synapse X) - 返回 {Body, StatusCode, Headers}
-	if syn and syn.request then
-		env.httpGet = function(url)
-			local response = syn.request({
-				Url = url,
-				Method = "GET",
-				Headers = {
-					["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-				}
-			})
-			if response and response.Body then
-				return response.Body
-			end
-			return nil
-		end
-		env.executorName = "Synapse X"
-
-	-- request (ScriptWare / Fluxus / Delta) - 返回 {Body, StatusCode}
-	elseif request and type(request) == "function" then
-		env.httpGet = function(url)
-			local response = request({Url = url, Method = "GET"})
-			if response then
-				if type(response) == "string" then
-					return response
-				elseif response.Body then
-					return response.Body
-				end
-			end
-			return nil
-		end
-		env.executorName = "ScriptWare/Fluxus/Delta"
-
-	-- http_request (Krnl / Electron) - 返回 {Body, StatusCode}
-	elseif http_request and type(http_request) == "function" then
-		env.httpGet = function(url)
-			local response = http_request({Url = url, Method = "GET"})
-			if response then
-				if type(response) == "string" then
-					return response
-				elseif response.Body then
-					return response.Body
-				end
-			end
-			return nil
-		end
-		env.executorName = "Krnl/Electron"
-
-	-- http.request (通用方式)
-	elseif http and http.request then
-		env.httpGet = function(url)
-			local response = http.request({Url = url, Method = "GET"})
-			if response then
-				if type(response) == "string" then
-					return response
-				elseif response.Body then
-					return response.Body
-				end
-			end
-			return nil
-		end
-		env.executorName = "Generic HTTP"
-
-	-- game:HttpGet (部分免费注入器)
-	elseif game and pcall(function() return game.HttpGet end) then
-		env.httpGet = function(url)
-			local success, result = pcall(function()
-				return game:HttpGet(url, true)
-			end)
-			if success then
-				return result
-			end
-			return nil
-		end
-		env.executorName = "Simple Executor"
-
-	-- HttpService (Roblox Studio 官方环境)
-	elseif game and game:GetService("HttpService") then
-		local HttpService = game:GetService("HttpService")
-		env.httpGet = function(url)
-			local success, result = pcall(function()
-				return HttpService:GetAsync(url, true)
-			end)
-			if success then
-				return result
-			end
-			return nil
-		end
-		env.executorName = "Roblox Studio"
-	end
-
-	-- 2. 检测 JSON 解析函数
-	if env.httpGet and game and game:GetService("HttpService") then
-		local HttpService = game:GetService("HttpService")
-		env.jsonDecode = function(str)
-			return HttpService:JSONDecode(str)
-		end
-		env.jsonEncode = function(tbl)
-			return HttpService:JSONEncode(tbl)
-		end
-		env.urlEncode = function(str)
-			return HttpService:UrlEncode(str)
-		end
-	else
-		-- 没有 HttpService 时使用自定义实现
-		env.jsonDecode = function(str)
-			-- 简单 JSON 解析（仅用于翻译 API 返回的格式）
-			-- 提取 [[["译文","原文",...]],...] 中的翻译文本
-			local results = {}
-			for part in string.gmatch(str, '\"([^\"]*)\"') do
-				table.insert(results, part)
-			end
-			-- 返回模拟格式
-			if #results >= 2 then
-				return {
-					{ { results[1], results[2] } },
-					nil,
-					results[3] or "auto"
-				}
-			end
-			return nil
-		end
-		env.jsonEncode = function(tbl)
-			return "{}"
-		end
-		env.urlEncode = nil  -- 将使用自定义 URL 编码
-	end
-
-	env.isReady = (env.httpGet ~= nil)
-	return env
-end
-
-local ENV = detectEnvironment()
-
--- ==================== 自定义 URL 编码 ====================
-
--- 如果注入器没有提供 UrlEncode，使用自定义实现
-local function customUrlEncode(str)
-	if ENV.urlEncode then
-		return ENV.urlEncode(str)
-	end
-
-	-- 手动 URL 编码（覆盖常见字符）
-	local result = str
-		:gsub("\n", "%%0A")
-		:gsub("\r", "%%0D")
-		:gsub(" ", "%%20")
-		:gsub("!", "%%21")
-		:gsub("\"", "%%22")
-		:gsub("#", "%%23")
-		:gsub("$", "%%24")
-		:gsub("&", "%%26")
-		:gsub("'", "%%27")
-		:gsub("%(", "%%28")
-		:gsub("%)", "%%29")
-		:gsub("%*", "%%2A")
-		:gsub("%+", "%%2B")
-		:gsub(",", "%%2C")
-		:gsub("/", "%%2F")
-		:gsub(":", "%%3A")
-		:gsub(";", "%%3B")
-		:gsub("<", "%%3C")
-		:gsub("=", "%%3D")
-		:gsub(">", "%%3E")
-		:gsub("%?", "%%3F")
-		:gsub("@", "%%40")
-		:gsub("%[", "%%5B")
-		:gsub("\\", "%%5C")
-		:gsub("%]", "%%5D")
-		:gsub("%^", "%%5E")
-		:gsub("`", "%%60")
-		:gsub("{", "%%7B")
-		:gsub("|", "%%7C")
-		:gsub("}", "%%7D")
-		:gsub("~", "%%7E")
-
-	-- 处理中文等多字节字符
-	result = result:gsub("([^%w%-%.%_%~])", function(c)
-		return string.format("%%%02X", string.byte(c))
-	end)
-
-	return result
-end
-
--- ==================== 模块定义 ====================
-
-local GoogleTranslate = {}
-
--- Google 翻译公开 API 端点
-local API_URL = "https://translate.googleapis.com/translate_a/single"
-
--- 翻译缓存
-local translationCache = {}
-local CACHE_MAX_SIZE = 500
-
--- 请求间隔控制
-local lastRequestTime = 0
-local MIN_REQUEST_INTERVAL = 0.5
-
--- 使用 wait() 替代 task.wait()（兼容更多注入器）
-local function safeWait(seconds)
-	local success = pcall(function()
-		task.wait(seconds)
-	end)
-	if not success then
-		-- task 库不可用，使用基础 wait
-		wait(seconds)
-	end
-end
-
--- 获取当前时间（兼容注入器）
-local function getTime()
-	local success, result = pcall(function()
-		return os.clock()
-	end)
-	if success then
-		return result
-	end
-	return tick()
-end
-
--- ==================== 语言代码表 ====================
-
-GoogleTranslate.Languages = {
-	Auto = "auto",
-	ChineseSimplified = "zh-CN",
-	ChineseTraditional = "zh-TW",
-	English = "en",
-	Japanese = "ja",
-	Korean = "ko",
-	French = "fr",
-	German = "de",
-	Spanish = "es",
-	Portuguese = "pt",
-	Russian = "ru",
-	Italian = "it",
-	Arabic = "ar",
-	Thai = "th",
-	Vietnamese = "vi",
-	Indonesian = "id",
-	Hindi = "hi",
-	Turkish = "tr",
-	Dutch = "nl",
-	Polish = "pl",
-	Swedish = "sv",
-	Danish = "da",
-	Finnish = "fi",
-	Norwegian = "no",
-	Czech = "cs",
-	Hungarian = "hu",
-	Romanian = "ro",
-	Greek = "el",
-	Hebrew = "iw",
-	Ukrainian = "uk",
-	Malay = "ms",
-	Filipino = "tl",
-}
-
--- ==================== 内部辅助函数 ====================
-
-local function makeCacheKey(text, sourceLang, targetLang)
-	return (sourceLang or "auto") .. "|" .. targetLang .. "|" .. text
-end
-
-local function trimCache()
-	local count = 0
-	for _ in pairs(translationCache) do
-		count = count + 1
-	end
-	if count > CACHE_MAX_SIZE then
-		translationCache = {}
-	end
-end
-
-local function waitForRateLimit()
-	local elapsed = getTime() - lastRequestTime
-	if elapsed < MIN_REQUEST_INTERVAL then
-		safeWait(MIN_REQUEST_INTERVAL - elapsed)
-	end
-	lastRequestTime = getTime()
-end
-
--- 解析翻译 API 返回的 JSON 响应
-local function parseTranslationResponse(responseBody)
-	if not responseBody then
-		return nil
-	end
-
-	-- 尝试用 JSON 解析
-	if ENV.jsonDecode then
-		local success, data = pcall(function()
-			return ENV.jsonDecode(responseBody)
-		end)
-		if success and data and data[1] then
-			local translatedParts = {}
-			for _, segment in ipairs(data[1]) do
-				if segment[1] then
-					table.insert(translatedParts, segment[1])
-				end
-			end
-			return table.concat(translatedParts, "")
-		end
-	end
-
-	-- JSON 解析失败时的回退方案：用正则提取
-	-- Google 翻译返回格式: [[["译文","原文",...]],...]
-	local parts = {}
-	for translated, original in string.gmatch(responseBody, '"([^"]*)"%s*,%s*"([^"]*)"') do
-		table.insert(parts, translated)
-	end
-	if #parts > 0 then
-		-- 第一个是翻译结果，第二个是原文（跳过）
-		local result = parts[1]
-		-- 如果后面还有翻译片段（非原文），拼接
-		for i = 3, #parts, 2 do
-			result = result .. parts[i]
-		end
-		return result
-	end
-
+-- ==================== 安全全局变量访问 ====================
+local function safeGet(name)
+	local ok, val = pcall(function() return _G[name] end)
+	if ok and val ~= nil then return val end
 	return nil
 end
 
--- 解析语言检测结果
-local function parseDetectionResponse(responseBody)
-	if not responseBody then
-		return "unknown"
-	end
+-- ==================== 环境检测 ====================
+local httpGet = nil
+local envName = "Unknown"
 
-	if ENV.jsonDecode then
-		local success, data = pcall(function()
-			return ENV.jsonDecode(responseBody)
-		end)
-		if success and data and data[2] then
-			return data[2]
+local syn = safeGet("syn")
+local request = safeGet("request")
+local http_request = safeGet("http_request")
+local http = safeGet("http")
+
+if syn and type(syn) == "table" and syn.request then
+	httpGet = function(url)
+		local r = syn.request({Url = url, Method = "GET", Headers = {["User-Agent"] = "Mozilla/5.0"}})
+		return r and r.Body
+	end
+	envName = "Synapse X"
+elseif request and type(request) == "function" then
+	httpGet = function(url)
+		local r = request({Url = url, Method = "GET"})
+		if type(r) == "string" then return r end
+		return r and r.Body
+	end
+	envName = "ScriptWare/Delta/Fluxus"
+elseif http_request and type(http_request) == "function" then
+	httpGet = function(url)
+		local r = http_request({Url = url, Method = "GET"})
+		if type(r) == "string" then return r end
+		return r and r.Body
+	end
+	envName = "Krnl/Electron"
+elseif http and type(http) == "table" and http.request then
+	httpGet = function(url)
+		local r = http.request({Url = url, Method = "GET"})
+		if type(r) == "string" then return r end
+		return r and r.Body
+	end
+	envName = "Generic HTTP"
+elseif game and pcall(function() return game.HttpGet end) then
+	httpGet = function(url)
+		local ok, r = pcall(function() return game:HttpGet(url, true) end)
+		return ok and r or nil
+	end
+	envName = "Simple Executor"
+elseif game and game.GetService and pcall(function() game:GetService("HttpService") end) then
+	local hs = game:GetService("HttpService")
+	httpGet = function(url)
+		local ok, r = pcall(function() return hs:GetAsync(url, true) end)
+		return ok and r or nil
+	end
+	envName = "Roblox Studio"
+end
+
+if not httpGet then
+	print("[翻译面板] 你的注入器不支持网络请求，脚本无法运行")
+	return
+end
+
+-- ==================== JSON 解析 ====================
+local jsonDecode = nil
+if game and game.GetService and pcall(function() game:GetService("HttpService") end) then
+	local hs = game:GetService("HttpService")
+	jsonDecode = function(s) return hs:JSONDecode(s) end
+end
+
+-- ==================== URL 编码 ====================
+local function encodeURL(str)
+	str = tostring(str)
+	str = str:gsub("%W", function(c)
+		return string.format("%%%02X", string.byte(c))
+	end)
+	return str
+end
+
+-- ==================== 翻译函数 ====================
+local cache = {}
+local lastTime = 0
+local interval = 0.3
+
+local function translate(text, toLang)
+	toLang = toLang or "zh-CN"
+	if not text or text == "" then return text end
+
+	local key = "auto|" .. toLang .. "|" .. text
+	if cache[key] then return cache[key] end
+
+	-- 频率限制
+	local now = tick()
+	if now - lastTime < interval then
+		wait(interval - (now - lastTime))
+	end
+	lastTime = tick()
+
+	local url = "https://translate.googleapis.com/translate_a/single"
+		.. "?client=gtx&sl=auto&tl=" .. toLang
+		.. "&dt=t&q=" .. encodeURL(text)
+
+	local body = httpGet(url)
+	if not body then return text end
+
+	-- 解析
+	local data
+	if jsonDecode then
+		pcall(function() data = jsonDecode(body) end)
+	end
+	if not data then
+		local parts = {}
+		for t in body:gmatch('"([^"]*)"') do
+			parts[#parts + 1] = t
+		end
+		if #parts >= 2 then
+			data = {{parts}, nil}
 		end
 	end
 
-	-- 回退：从响应中提取语言代码
-	local lang = string.match(responseBody, '(%a%a%-?%a*)",%s*null%s*%]%]')
-	if lang then
-		return lang
+	if data and data[1] and data[1][1] then
+		local parts = {}
+		for _, seg in ipairs(data[1]) do
+			if seg[1] then parts[#parts + 1] = seg[1] end
+		end
+		local result = table.concat(parts, "")
+		if #cache > 500 then cache = {} end
+		cache[key] = result
+		return result
 	end
-
-	return "unknown"
+	return text
 end
 
--- ==================== 核心 API ====================
+-- ==================== 创建 UI ====================
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
---[[
-	翻译文本
-	@param text        string  - 要翻译的文本
-	@param targetLang  string  - 目标语言代码（如 "zh-CN", "en", "ja"）
-	@param sourceLang  string? - 源语言代码，默认 "auto"（自动检测）
-	@return string     - 翻译后的文本；失败时返回原始文本
-]]
-function GoogleTranslate:Translate(text, targetLang, sourceLang)
-	if not ENV.isReady then
-		warn("[GoogleTranslate] 未检测到可用的 HTTP 请求函数，请确认注入器支持网络请求")
-		return text
-	end
+-- 主容器
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TranslatePanel"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-	if not text or text == "" then
-		return text
-	end
-
-	targetLang = targetLang or "zh-CN"
-	sourceLang = sourceLang or "auto"
-
-	-- 检查缓存
-	local cacheKey = makeCacheKey(text, sourceLang, targetLang)
-	if translationCache[cacheKey] then
-		return translationCache[cacheKey]
-	end
-
-	-- 频率限制
-	waitForRateLimit()
-
-	-- 构建 URL
-	local encodedText = customUrlEncode(text)
-	local url = API_URL
-		.. "?client=gtx"
-		.. "&sl=" .. sourceLang
-		.. "&tl=" .. targetLang
-		.. "&dt=t"
-		.. "&q=" .. encodedText
-
-	-- 发送请求
-	local responseBody = ENV.httpGet(url)
-
-	if not responseBody then
-		warn("[GoogleTranslate] 翻译请求失败: " .. tostring(text))
-		return text
-	end
-
-	-- 解析结果
-	local translatedText = parseTranslationResponse(responseBody)
-
-	if not translatedText then
-		warn("[GoogleTranslate] 翻译结果解析失败: " .. tostring(text))
-		return text
-	end
-
-	-- 缓存
-	trimCache()
-	translationCache[cacheKey] = translatedText
-
-	return translatedText
+-- 检查是否已存在，避免重复创建
+local existing = playerGui:FindFirstChild("TranslatePanel")
+if existing then
+	existing:Destroy()
+	wait(0.5)
 end
+ScreenGui.Parent = playerGui
 
---[[
-	批量翻译
-	@param texts       table   - 要翻译的文本数组
-	@param targetLang  string  - 目标语言代码
-	@param sourceLang  string? - 源语言代码，默认 "auto"
-	@return table      - 翻译后的文本数组
-]]
-function GoogleTranslate:TranslateBatch(texts, targetLang, sourceLang)
-	local results = {}
-	for i, text in ipairs(texts) do
-		results[i] = self:Translate(text, targetLang, sourceLang)
-		safeWait(0.3)
+-- ====== 面板主体 ======
+local Panel = Instance.new("Frame")
+Panel.Name = "MainPanel"
+Panel.Size = UDim2.new(0, 220, 0, 140)
+Panel.Position = UDim2.new(0.5, -110, 0.3, 0)
+Panel.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Panel.BorderSizePixel = 0
+Panel.BackgroundTransparency = 0.05
+Panel.ClipsDescendants = true
+Panel.Parent = ScreenGui
+
+-- 圆角
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = Panel
+
+-- 阴影
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(60, 180, 255)
+Stroke.Thickness = 1.5
+Stroke.Transparency = 0.4
+Stroke.Parent = Panel
+
+-- ====== 标题栏（可拖拽） ======
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 36)
+TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = Panel
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = TitleBar
+
+-- 标题文字
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -40, 1, 0)
+Title.Position = UDim2.new(0, 14, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.Text = "翻译面板"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 15
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+-- 状态指示点
+local StatusDot = Instance.new("Frame")
+StatusDot.Name = "StatusDot"
+StatusDot.Size = UDim2.new(0, 8, 0, 8)
+StatusDot.Position = UDim2.new(1, -30, 0.5, -4)
+StatusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+StatusDot.BorderSizePixel = 0
+StatusDot.Parent = TitleBar
+
+local DotCorner = Instance.new("UICorner")
+DotCorner.CornerRadius = UDim.new(1, 0)
+DotCorner.Parent = StatusDot
+
+-- ====== 内容区域 ======
+local Content = Instance.new("Frame")
+Content.Name = "Content"
+Content.Size = UDim2.new(1, 0, 1, -36)
+Content.Position = UDim2.new(0, 0, 0, 36)
+Content.BackgroundTransparency = 1
+Content.Parent = Panel
+
+-- 状态文字
+local StatusText = Instance.new("TextLabel")
+StatusText.Name = "StatusText"
+StatusText.Size = UDim2.new(1, -30, 0, 24)
+StatusText.Position = UDim2.new(0, 15, 0, 12)
+StatusText.BackgroundTransparency = 1
+StatusText.Font = Enum.Font.Gotham
+StatusText.Text = "翻译: 关闭"
+StatusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+StatusText.TextSize = 14
+StatusText.TextXAlignment = Enum.TextXAlignment.Left
+StatusText.Parent = Content
+
+-- 开关按钮背景
+local ToggleBg = Instance.new("Frame")
+ToggleBg.Name = "ToggleBg"
+ToggleBg.Size = UDim2.new(0, 56, 0, 28)
+ToggleBg.Position = UDim2.new(1, -70, 0, 10)
+ToggleBg.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+ToggleBg.BorderSizePixel = 0
+ToggleBg.Parent = Content
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+ToggleCorner.Parent = ToggleBg
+
+-- 开关滑块
+local ToggleKnob = Instance.new("Frame")
+ToggleKnob.Name = "ToggleKnob"
+ToggleKnob.Size = UDim2.new(0, 22, 0, 22)
+ToggleKnob.Position = UDim2.new(0, 3, 0, 3)
+ToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ToggleKnob.BorderSizePixel = 0
+ToggleKnob.Parent = ToggleBg
+
+local KnobCorner = Instance.new("UICorner")
+KnobCorner.CornerRadius = UDim.new(1, 0)
+KnobCorner.Parent = ToggleKnob
+
+-- 分隔线
+local Divider = Instance.new("Frame")
+Divider.Name = "Divider"
+Divider.Size = UDim2.new(1, -30, 0, 1)
+Divider.Position = UDim2.new(0, 15, 0, 50)
+Divider.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+Divider.BorderSizePixel = 0
+Divider.Parent = Content
+
+-- 翻译计数
+local CountText = Instance.new("TextLabel")
+CountText.Name = "CountText"
+CountText.Size = UDim2.new(1, -30, 0, 20)
+CountText.Position = UDim2.new(0, 15, 0, 60)
+CountText.BackgroundTransparency = 1
+CountText.Font = Enum.Font.Gotham
+CountText.Text = "已翻译: 0 条"
+CountText.TextColor3 = Color3.fromRGB(150, 150, 155)
+CountText.TextSize = 12
+CountText.TextXAlignment = Enum.TextXAlignment.Left
+CountText.Parent = Content
+
+-- 底部提示
+local HintText = Instance.new("TextLabel")
+HintText.Name = "HintText"
+HintText.Size = UDim2.new(1, -30, 0, 20)
+HintText.Position = UDim2.new(0, 15, 0, 84)
+HintText.BackgroundTransparency = 1
+HintText.Font = Enum.Font.Gotham
+HintText.Text = "点击开关开启翻译"
+HintText.TextColor3 = Color3.fromRGB(120, 120, 125)
+HintText.TextSize = 11
+HintText.TextXAlignment = Enum.TextXAlignment.Left
+HintText.Parent = Content
+
+-- ====== 拖拽逻辑 ======
+local dragging = false
+local dragStart = nil
+local panelStart = nil
+
+TitleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		panelStart = Panel.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
 	end
-	return results
-end
+end)
 
---[[
-	检测文本语言
-	@param text string - 要检测的文本
-	@return string - 检测到的语言代码，失败返回 "unknown"
-]]
-function GoogleTranslate:DetectLanguage(text)
-	if not ENV.isReady or not text or text == "" then
-		return "unknown"
+TitleBar.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		Panel.Position = UDim2.new(
+			panelStart.X.Scale,
+			panelStart.X.Offset + delta.X,
+			panelStart.Y.Scale,
+			panelStart.Y.Offset + delta.Y
+		)
 	end
+end)
 
-	waitForRateLimit()
+-- ====== 开关逻辑 ======
+local enabled = false
+local translatedCount = 0
+local translatedSet = {}
 
-	local encodedText = customUrlEncode(text)
-	local url = API_URL
-		.. "?client=gtx"
-		.. "&sl=auto"
-		.. "&tl=en"
-		.. "&dt=t"
-		.. "&q=" .. encodedText
+local function scanAndTranslate()
+	if not enabled then return end
 
-	local responseBody = ENV.httpGet(url)
-	return parseDetectionResponse(responseBody)
-end
-
---[[
-	翻译聊天消息（跳过 / 开头的命令）
-	@param message    string - 原始消息
-	@param targetLang string - 目标语言
-	@return string    - 翻译后的消息
-]]
-function GoogleTranslate:TranslateChatMessage(message, targetLang)
-	if not message or message == "" then
-		return message
-	end
-	if string.sub(message, 1, 1) == "/" then
-		return message
-	end
-	return self:Translate(message, targetLang, "auto")
-end
-
---[[
-	翻译 GUI 对象的 Text 属性
-	@param guiObject  Instance - 任意含 Text 属性的 GUI 对象
-	@param targetLang string   - 目标语言
-]]
-function GoogleTranslate:TranslateGuiObject(guiObject, targetLang)
-	local success = pcall(function()
-		if guiObject and guiObject.Text then
-			local original = guiObject.Text
-			if original and original ~= "" then
-				local translated = self:Translate(original, targetLang)
-				guiObject.Text = translated
+	pcall(function()
+		-- 遍历所有 ScreenGui
+		local guis = playerGui:GetChildren()
+		for _, gui in ipairs(guis) do
+			if gui:IsA("ScreenGui") and gui.Name ~= "TranslatePanel" then
+				-- 遍历所有后代
+				local descendants = gui:GetDescendants()
+				for _, obj in ipairs(descendants) do
+					pcall(function()
+						local cn = obj.ClassName or ""
+						if cn == "TextLabel" or cn == "TextButton" or cn == "TextBox" then
+							local text = obj.Text
+							if text and text ~= "" and #text > 0 then
+								-- 检查是否已翻译过
+								if not translatedSet[obj] then
+									-- 判断是否包含英文
+									local hasEnglish = false
+									for ch in text:gmatch("[%a]") do
+										hasEnglish = true
+										break
+									end
+									if hasEnglish then
+										local translated = translate(text, "zh-CN")
+										if translated ~= text then
+											obj.Text = translated
+											translatedCount = translatedCount + 1
+											CountText.Text = "已翻译: " .. translatedCount .. " 条"
+										end
+									end
+									translatedSet[obj] = true
+								end
+							end
+						end
+					end)
+				end
 			end
 		end
 	end)
-	if not success then
-		warn("[GoogleTranslate] GUI 翻译失败")
+end
+
+local function toggle(on)
+	enabled = on
+	if on then
+		-- 开启
+		ToggleBg.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+		ToggleKnob:TweenPosition(UDim2.new(1, -25, 0, 3), "Out", "Quad", 0.2, true)
+		StatusDot.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
+		StatusText.Text = "翻译: 开启中"
+		StatusText.TextColor3 = Color3.fromRGB(0, 255, 150)
+		HintText.Text = "正在自动翻译界面文本..."
+		print("[翻译面板] 已开启翻译")
+	else
+		-- 关闭
+		ToggleBg.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+		ToggleKnob:TweenPosition(UDim2.new(0, 3, 0, 3), "Out", "Quad", 0.2, true)
+		StatusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+		StatusText.Text = "翻译: 关闭"
+		StatusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+		HintText.Text = "点击开关开启翻译"
+		print("[翻译面板] 已关闭翻译")
 	end
 end
 
---[[
-	递归翻译所有子 GUI 的文本
-	@param parent     Instance - 父级 GUI 对象
-	@param targetLang string   - 目标语言
-]]
-function GoogleTranslate:TranslateAllGuiObjects(parent, targetLang)
-	if not parent then return end
+-- 开关点击
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "ToggleBtn"
+toggleBtn.Size = UDim2.new(0, 56, 0, 28)
+toggleBtn.Position = UDim2.new(1, -70, 0, 10)
+toggleBtn.BackgroundTransparency = 1
+toggleBtn.Text = ""
+toggleBtn.ZIndex = 10
+toggleBtn.Parent = Content
 
-	local function processChildren(obj)
-		pcall(function()
-			for _, child in ipairs(obj:GetChildren()) do
-				local className = child.ClassName or ""
-				if className == "TextLabel" or className == "TextButton" or className == "TextBox" then
-					self:TranslateGuiObject(child, targetLang)
-				end
-				-- 递归处理子对象
-				if #child:GetChildren() > 0 then
-					processChildren(child)
-				end
-			end
-		end)
+toggleBtn.MouseButton1Click:Connect(function()
+	toggle(not enabled)
+end)
+
+-- ====== 扫描循环 ======
+local scanLoop
+scanLoop = coroutine.wrap(function()
+	while true do
+		scanAndTranslate()
+		wait(1) -- 每秒扫描一次
 	end
+end)
+scanLoop()
 
-	processChildren(parent)
-end
+-- ====== 退出时清理 ======
+player.CharacterRemoving:Connect(function()
+	ScreenGui:Destroy()
+end)
 
---[[
-	获取环境信息
-	@return table - {executorName, isReady, httpGet, jsonDecode, urlEncode}
-]]
-function GoogleTranslate:GetEnvironment()
-	return {
-		executorName = ENV.executorName,
-		isReady = ENV.isReady,
-	}
-end
-
---[[
-	清除翻译缓存
-]]
-function GoogleTranslate:ClearCache()
-	translationCache = {}
-end
-
---[[
-	获取缓存大小
-	@return number - 缓存条目数
-]]
-function GoogleTranslate:GetCacheSize()
-	local count = 0
-	for _ in pairs(translationCache) do
-		count = count + 1
-	end
-	return count
-end
-
---[[
-	设置请求间隔
-	@param interval number - 最小请求间隔秒数，默认 0.5
-]]
-function GoogleTranslate:SetRequestInterval(interval)
-	MIN_REQUEST_INTERVAL = math.max(0.1, interval or 0.5)
-end
-
--- ==================== 初始化日志 ====================
-
-if ENV.isReady then
-	print("[GoogleTranslate] 环境检测成功 → " .. ENV.executorName)
-	print("[GoogleTranslate] 模块已就绪，支持 100+ 语言互译")
-else
-	warn("[GoogleTranslate] 未检测到可用 HTTP 函数！")
-	warn("[GoogleTranslate] 支持的注入器: Synapse X / Krnl / ScriptWare / Delta / Fluxus / 通用注入器")
-end
-
--- ==================== 使用示例（注释掉，按需取消） ====================
-
---[[
--- 基础翻译
-local zh = GoogleTranslate:Translate("Hello World", "zh-CN")       -- 英→中
-local ja = GoogleTranslate:Translate("你好", "ja")                  -- 中→日
-local en = GoogleTranslate:Translate("안녕하세요", "en")              -- 韩→英
-
--- 批量翻译
-local texts = {"Welcome", "Play", "Settings"}
-local trans = GoogleTranslate:TranslateBatch(texts, "zh-CN")
-
--- 检测语言
-print(GoogleTranslate:DetectLanguage("こんにちは"))  -- "ja"
-
--- 翻译聊天消息（自动跳过 / 命令）
-local msg = GoogleTranslate:TranslateChatMessage("Hello", "zh-CN")
-
--- 翻译游戏界面
-local player = game.Players.LocalPlayer
-local gui = player:WaitForChild("PlayerGui")
-GoogleTranslate:TranslateAllGuiObjects(gui, "zh-CN")
-
--- 查看环境 / 清缓存 / 调频率
-print(GoogleTranslate:GetEnvironment().executorName)
-GoogleTranslate:ClearCache()
-GoogleTranslate:SetRequestInterval(1.0)
-]]
-
-return GoogleTranslate
+-- ====== 启动日志 ======
+print("========================================")
+print(" 翻译面板 已加载")
+print(" 环境: " .. envName)
+print(" 拖拽标题栏移动面板")
+print(" 点击开关按钮开启翻译")
+print(" 开启后每 1 秒自动扫描并翻译")
+print("========================================")
