@@ -134,20 +134,22 @@ function Animator:Spring(obj, properties, duration, callback)
 end
 
 -- 弹出入场动画
-function Animator:PopIn(frame, duration, callback)
+function Animator:PopIn(frame, targetSize, duration, callback)
+	-- 保存原始尺寸和位置
+	local originalSize = targetSize or frame.Size
+	local originalPos = frame.Position
+	local originalAnchor = frame.AnchorPoint
+
+	-- 起点：缩小到 0
 	frame.Size = UDim2.new(0, 0, 0, 0)
-	frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-	frame.AnchorPoint = Vector2.new(0.5, 0.5)
-	frame.BackgroundTransparency = 1
+	frame.BackgroundTransparency = 0.3  -- 半透明起点
 
-	local targetSize = UDim2.new(0, 400, 0, 300) -- 由调用者覆盖
-
-	-- 先做尺寸弹簧
-	local tweenInfo = TweenInfo.new(duration or 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, 0)
+	duration = duration or 0.4
+	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, 0)
 	frame.Size = UDim2.new(0, 0, 0, 0)
 	local tween = tweenService:Create(frame, tweenInfo, {
-		Size = targetSize,
-		BackgroundTransparency = frame.BackgroundTransparency
+		Size = originalSize,
+		BackgroundTransparency = 0.03,  -- 恢复到几乎不透明
 	})
 	tween:Play()
 	if callback then tween.Completed:Connect(callback) end
@@ -365,7 +367,7 @@ function Window.new(config)
 		BackgroundColor3 = t.Background,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0.03,
 		Parent = screenGui,
 	})
 	addCorner(mainFrame, 10)
@@ -612,7 +614,7 @@ function Window.new(config)
 	}, Window)
 
 	-- 入场动画
-	Animator:PopIn(mainFrame, 0.45)
+	Animator:PopIn(mainFrame, mainFrame.Size, 0.45)
 	SoundManager:Play("Open")
 
 	return self
@@ -2037,5 +2039,70 @@ print(" UI.Button.new(page, '点击我', function()")
 print("   UI.Notification:Success('成功', '你好！')")
 print(" end)")
 print("========================================")
+
+-- ==================== 自动演示窗口 ====================
+-- 加载脚本后自动弹出一个完整示例窗口，展示所有组件
+-- 如果不需要自动弹出，删除下面这段即可
+task.spawn(function()
+	wait(0.5)
+
+	local demo = LuminaUI.Window.new({
+		Title = "LuminaUI 演示",
+		Width = 500,
+		Height = 420,
+	})
+
+	-- 主页
+	local home = demo:AddPage("🏠 主页")
+	LuminaUI.Section.new(home, "欢迎")
+	LuminaUI.Button.new(home, "点击我试试", function()
+		LuminaUI.Notification:Success("成功", "按钮被点击了！")
+	end)
+	LuminaUI.Button.new(home, "危险操作", function()
+		LuminaUI.Notification:Error("错误", "这是一个错误通知")
+	end, {Color = LuminaUI.CurrentTheme().Danger})
+
+	-- 设置页
+	local settings = demo:AddPage("⚙ 设置")
+
+	LuminaUI.Section.new(settings, "基础设置")
+	LuminaUI.Toggle.new(settings, "自动瞄准", function(enabled)
+		LuminaUI.Notification:Info("提示", "自动瞄准: " .. tostring(enabled))
+	end)
+
+	LuminaUI.Slider.new(settings, "移动速度", function(value)
+		print("速度:", value)
+	end, {Min = 1, Max = 100, Default = 50})
+
+	LuminaUI.Dropdown.new(settings, "选择武器", {"手枪", "步枪", "狙击枪", "霰弹枪"}, function(selected)
+		LuminaUI.Notification:Info("提示", "选中: " .. selected)
+	end)
+
+	LuminaUI.Section.new(settings, "高级设置")
+	LuminaUI.Keybind.new(settings, "快捷键", function(key)
+		LuminaUI.Notification:Info("提示", "绑定: " .. key)
+	end)
+
+	LuminaUI.ColorPicker.new(settings, "界面颜色", function(color)
+		print("颜色:", color)
+	end)
+
+	LuminaUI.Input.new(settings, "自定义文本", function(text)
+		print("输入:", text)
+	end, {Placeholder = "输入你的名字..."})
+
+	-- 关于页
+	local about = demo:AddPage("ℹ 关于")
+	LuminaUI.Section.new(about, "LuminaUI v1.0")
+	LuminaUI.Button.new(about, "发送测试通知", function()
+		LuminaUI.Notification:Success("完成", "这是一个成功通知！")
+		wait(0.5)
+		LuminaUI.Notification:Warning("注意", "这是一个警告通知")
+		wait(0.5)
+		LuminaUI.Notification:Info("提示", "这是一个信息通知")
+	end)
+
+	LuminaUI.Notification:Success("LuminaUI", "演示窗口已加载完成！")
+end)
 
 return LuminaUI
